@@ -1,11 +1,13 @@
 <template>
     <div>
-        <canvas id="glcanvas" width="640" height="480"></canvas>
+        <canvas id="glcanvas" width="1000" height="480"></canvas>
     </div>
 </template>
 
 <script>
 import {mat4} from "gl-matrix"
+import {Camera} from "./../../public/static/js/camera"
+import * as math from "mathjs"
 export default {
     data(){
         return {
@@ -25,7 +27,7 @@ export default {
                 varying highp vec3 vLighting;
 
                 void main() {
-                    gl_Position = uProjection * uModel * aVertexPosition;
+                    gl_Position = uProjection * uView * uModel  * aVertexPosition;
                     vTextureCoord = aTextureCoord;
 
                     highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);
@@ -52,7 +54,8 @@ export default {
             buffers: null,
             programInfo: null,
             then: 0,
-            squareRotation: 0.0
+            squareRotation: 0.0,
+            camera: null
         }
     },
     methods:{
@@ -138,6 +141,7 @@ export default {
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                 }
             };
             image.src = url;
@@ -199,6 +203,7 @@ export default {
             };
         },
         drawScene(gl, programInfo, buffers) {
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
             gl.clearDepth(1.0);                 // Clear everything
             gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -208,101 +213,65 @@ export default {
 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            // Create a perspective matrix, a special matrix that is
-            // used to simulate the distortion of perspective in a camera.
-            // Our field of view is 45 degrees, with a width/height
-            // ratio that matches the display size of the canvas
-            // and we only want to see objects between 0.1 units
-            // and 100 units away from the camera.
-
-            const fieldOfView = 45 * Math.PI / 180;   // in radians
+            const fieldOfView = this.camera.Zoom * Math.PI / 180;   // in radians
             const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
             const zNear = 0.1;
             const zFar = 100.0;
             const Projection = mat4.create();
-
-            // note: glmatrix.js always has the first argument
-            // as the destination to receive the result.
             mat4.perspective(Projection,
                             fieldOfView,
                             aspect,
                             zNear,
                             zFar);
-
-            // Set the drawing position to the "identity" point, which is
-            // the center of the scene.
             const Model = mat4.create();
-
-            // Now move the drawing position a bit to where we want to
-            // start drawing the square.
-
-            mat4.translate(Model,     // destination matrix
-                            Model,     // matrix to translate
-                            [-0.0, 0.0, -6.0]);  // amount to translate
-
+            // mat4.translate(Model,     // destination matrix
+            //                 Model,     // matrix to translate
+            //                 [0.0, 0.0, 0.0]);  // amount to translate
+            const seed = math.random();
             mat4.rotate(Model,  // destination matrix
               Model,  // matrix to rotate
               this.squareRotation,   // amount to rotate in radians
-              [0, 1, 0]);     // axis to rotate around
-            
-            const view = mat4.create();
-            mat4.targetTo(view, [0, 2, 3], [0, 0, 0], [0, 1, 0]);
+              [1, 1, 0]);     // axis to rotate around
 
+            // const View = mat4.create();
+            // mat4.lookAt(View, [0, 1, 1], [0, 0, 0], [0, 1, -1]);
+            const View = this.camera.getViewMatrix();
             const normalMatrix = mat4.create();
             mat4.invert(normalMatrix, Model);
             mat4.transpose(normalMatrix, normalMatrix);
-
-            // Tell WebGL how to pull out the positions from the position
-            // buffer into the vertexPosition attribute.
             {
-                const numComponents = 3;  // pull out 2 values per iteration
-                const type = gl.FLOAT;    // the data in the buffer is 32bit floats
-                const normalize = false;  // don't normalize
-                const stride = 32;         // how many bytes to get from one set of values to the next
-                                        // 0 = use type and numComponents above
-                const offset = 0;         // how many bytes inside the buffer to start from
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.dataBuffer);
                 gl.vertexAttribPointer(
                     programInfo.attribLocations.vertexPosition,
-                    numComponents,
-                    type,
-                    normalize,
-                    stride,
-                    offset);
+                    3,
+                    gl.FLOAT,
+                    false,
+                    32,
+                    0);
                 gl.enableVertexAttribArray(
                     programInfo.attribLocations.vertexPosition);
             }
             {
-                const numComponents = 3;
-                const type = gl.FLOAT;
-                const normalize = false;
-                const stride = 32;
-                const offset = 12;
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.dataBuffer);
                 gl.vertexAttribPointer(
                     programInfo.attribLocations.vertexNormal,
-                    numComponents,
-                    type,
-                    normalize,
-                    stride,
-                    offset);
+                    3,
+                    gl.FLOAT,
+                    false,
+                    32,
+                    12);
                 gl.enableVertexAttribArray(
                     programInfo.attribLocations.vertexNormal);
             }
             {
-                const numComponents = 2;
-                const type = gl.FLOAT;
-                const normalize = false;
-                const stride = 32;
-                const offset = 24;
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.dataBuffer);
                 gl.vertexAttribPointer(
                     programInfo.attribLocations.textureCoord,
-                    numComponents,
-                    type,
-                    normalize,
-                    stride,
-                    offset);
+                    2,
+                    gl.FLOAT,
+                    false,
+                    32,
+                    24);
                 gl.enableVertexAttribArray(
                     programInfo.attribLocations.textureCoord);
             }
@@ -314,11 +283,11 @@ export default {
             // Set the shader uniforms
 
             gl.uniformMatrix4fv(
-                programInfo.uniformLocations.Projection,
+                programInfo.uniformLocations.projection,
                 false,
                 Projection);
             gl.uniformMatrix4fv(
-                programInfo.uniformLocations.Model,
+                programInfo.uniformLocations.model,
                 false,
                 Model);
             gl.uniformMatrix4fv(
@@ -328,7 +297,7 @@ export default {
             gl.uniformMatrix4fv(
                 programInfo.uniformLocations.view,
                 false,
-                view);
+                View);
             // Tell WebGL we want to affect texture unit 0
             gl.activeTexture(gl.TEXTURE0);
 
@@ -345,13 +314,32 @@ export default {
             }
         },
         render(now) {
-            now *= 0.001;  // convert to seconds
+            now *= 0.0005;  // convert to seconds
             const deltaTime = now - this.then;
             this.then = now;
             this.squareRotation += deltaTime;
             this.drawScene(this.gl, this.programInfo, this.buffers, deltaTime);
 
             requestAnimationFrame(this.render);
+        },
+        addResizeEvent(){
+            this.resetCanvas();
+            window.onresize = (e) => {
+                this.resetCanvas();
+            } 
+        },
+        resetCanvas(){
+            const canvas = this.glEle;
+            canvas.style.width = document.body.clientWidth + "px";
+            canvas.style.height = document.body.clientHeight + "px";
+            var devicePixelRatio = window.devicePixelRatio || 1;
+            var w = canvas.clientWidth * devicePixelRatio;
+            var h = canvas.clientHeight * devicePixelRatio;
+            if (canvas.width != w || canvas.height != h) {
+                console.log("resetGL: Setting canvas.width=" + w + " canvas.height=" + h);
+                canvas.width = w;
+                canvas.height = h;
+            }
         }
     },
     mounted(){
@@ -377,19 +365,17 @@ export default {
                 uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
             },
         }
-
+        this.camera = new Camera(gl);
+        this.camera.setPosition([0, 0, 10]);
         this.buffers = this.initBuffers(gl);
         this.texture = this.loadTexture(gl, "/static/image/container2.png");
         this.render(new Date());
+        this.addResizeEvent();
     }
 
 }
 </script>
 
 <style lang="scss" scoped>
-#glcanvas{
-    // width: 1280px;
-    // height: 960px;
-}
 </style>
 
