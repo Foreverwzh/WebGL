@@ -202,7 +202,8 @@ export default {
                 dataBuffer: dataBuffer
             };
         },
-        drawScene(gl, programInfo, buffers) {
+        drawScene(gl, programInfo, buffers, deltaTime) {
+            this.camera.deltaTime = deltaTime;
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
             gl.clearDepth(1.0);                 // Clear everything
@@ -314,7 +315,7 @@ export default {
             }
         },
         render(now) {
-            now *= 0.0005;  // convert to seconds
+            now *= 0.001;  // convert to seconds
             const deltaTime = now - this.then;
             this.then = now;
             this.squareRotation += deltaTime;
