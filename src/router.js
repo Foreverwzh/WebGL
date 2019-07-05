@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
-import Test1 from './views/Test1'
+import Box from './views/Box.vue'
 
 Vue.use(Router)
 
@@ -15,9 +15,9 @@ export default new Router({
       component: Home
     },
     {
-      path: '/test1',
-      name: 'test1',
-      component: Test1
+      path: '/box',
+      name: 'box',
+      component: Box
     },
     {
       path: '/about',
