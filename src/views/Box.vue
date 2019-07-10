@@ -5,10 +5,8 @@
 </template>
 
 <script>
-import {mat4} from "gl-matrix"
-import {Camera} from "./../../public/static/js/camera"
-import * as glTool from "./../../public/static/js/glTool"
-import * as math from "mathjs"
+// import {mat4} from "gl-matrix"
+// import * as math from "mathjs"
 import { Kala } from "./../../public/static/js/kala"
 export default {
     data(){
@@ -89,7 +87,7 @@ export default {
             now *= 0.001;
             const deltaTime = now - this.then;
             this.then = now;
-            this.kala.camera.deltaTime = deltaTime;
+            // this.kala.camera.deltaTime = deltaTime;
             this.kala.geometries[0].rotate(deltaTime, [1, 1, 0]);
             this.kala.render();
             requestAnimationFrame(this.render);
