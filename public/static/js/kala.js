@@ -13,6 +13,7 @@ export class Kala{
         this.scene = this.initScene();
         this.view = null;
         this.Geometry = Geometry;
+        this.lastRenderTime = null;
     }
     
     initScene(){
@@ -189,6 +190,19 @@ export class Kala{
     }
 
     render(){
+        if(!this.camera){
+            console.error("Please add a camera before rendering.");
+            return false;
+        }
+        const now = new Date();
+        if(!this.lastRenderTime){
+            this.lastRenderTime = now;
+        } else {
+            this.deltaTime = now - this.lastRenderTime;
+            this.lastRenderTime = now;
+        }
+        this.camera.deltaTime = this.deltaTime * 0.001;
+        this.camera.ProcessKeyAction();
         const gl = this.gl;
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clearColor(0.0, 0.0, 0.0, 1.0);

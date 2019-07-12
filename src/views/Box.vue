@@ -5,7 +5,7 @@
 </template>
 
 <script>
-// import {mat4} from "gl-matrix"
+import { vec3 } from "gl-matrix"
 // import * as math from "mathjs"
 import { Kala } from "./../../public/static/js/kala"
 export default {
@@ -87,8 +87,9 @@ export default {
             now *= 0.001;
             const deltaTime = now - this.then;
             this.then = now;
-            // this.kala.camera.deltaTime = deltaTime;
-            this.kala.geometries[0].rotate(deltaTime, [1, 1, 0]);
+            // this.kala.geometries.forEach(geo => {
+            //     geo.rotate(deltaTime, [Math.random(), Math.random(), Math.random()]);
+            // })
             this.kala.render();
             requestAnimationFrame(this.render);
         },
@@ -123,11 +124,27 @@ export default {
         
         this.camera = kala.addCamera();
         this.camera.setPosition([0, 0, 10]);
+        this.camera.Speed = 10;
         const box = this.boxInfo();
         const texture = kala.loadTexture("/static/image/container2.png");
-        const geometry = new kala.Geometry(box.vertexes, box.normals, box.textureCoords);
-        geometry.texture = texture;
-        kala.add(geometry);
+        const cubePositions = [
+            vec3.fromValues( 0.0,  0.0,  0.0), 
+            vec3.fromValues( 2.0,  5.0, -15.0), 
+            vec3.fromValues(-1.5, -2.2, -2.5),  
+            vec3.fromValues(-3.8, -2.0, -12.3),  
+            vec3.fromValues( 2.4, -0.4, -3.5),  
+            vec3.fromValues(-1.7,  3.0, -7.5),  
+            vec3.fromValues( 1.3, -2.0, -2.5),  
+            vec3.fromValues( 1.5,  2.0, -2.5), 
+            vec3.fromValues( 1.5,  0.2, -1.5), 
+            vec3.fromValues(-1.3,  1.0, -1.5)
+        ];
+        for(let i of cubePositions) {
+            const geometry = new kala.Geometry(box.vertexes, box.normals, box.textureCoords);
+            geometry.texture = texture;
+            kala.add(geometry);
+            geometry.translate(i);
+        }
         this.render(new Date());
         this.addResizeEvent();
     }

@@ -29,6 +29,7 @@ export class Camera {
         this.Right = vec3.create();
         this.Up = vec3.create();
         this.WorldUp = vec3.create();
+        this.keyPress = null;
         vec3.set(this.WorldUp, 0.0, 1.0, 0.0);
         this.updateCameraVectors();
         this.addMouseEvent();
@@ -95,7 +96,8 @@ export class Camera {
         });
     }
 
-    ProcessKeyAction(k){
+    ProcessKeyAction(){
+        const k = this.keyPress;
         if(k === "w"){
             const t = vec3.create();
             const desV = this.Speed * this.deltaTime;
@@ -123,6 +125,13 @@ export class Camera {
             vec3.scale(t, this.Right, desV);
             vec3.add(this.Position, this.Position, t);
         }
+        // console.log(k);
+        if(k === " "){
+            const t = vec3.create();
+            const desV = this.Speed * this.deltaTime;
+            vec3.scale(t, this.WorldUp, desV);
+            vec3.add(this.Position, this.Position, t);
+        }
 
         this.updateCameraVectors();
     }
@@ -130,13 +139,21 @@ export class Camera {
     addKeyEvent(){
         this.gl.canvas.setAttribute("tabindex", 1);
         this.gl.canvas.addEventListener("keydown", (e) => {
+            e.preventDefault();
             const k = e.key;
             if(k === "Escape"){
                 this.gl.canvas.style.cursor = "default";
                 this.mouse.focus = false;
             }
             if(this.mouse.focus === false) return false;
-            this.ProcessKeyAction(k);
+            this.keyPress = k;
+            return false;
+        });
+
+        this.gl.canvas.addEventListener("keyup", (e) => {
+            e.preventDefault();
+            this.keyPress = null;
+            return false;
         });
     }
 }
