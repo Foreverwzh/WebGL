@@ -13,14 +13,9 @@ export class Camera {
     constructor(gl){
         this.Yaw = -90;
         this.Pitch = 0.0;
-        this.Speed = 3.0;
-        this.Sensitivity = 0.05;
+        this.Speed = 1.0;
+        this.Sensitivity = 0.02;
         this.gl = gl;
-        this.mouse = {
-            focus: false,
-            lx: 0,
-            ly: 0
-        };
 
         this.deltaTime = 0;
 
@@ -29,7 +24,7 @@ export class Camera {
         this.Right = vec3.create();
         this.Up = vec3.create();
         this.WorldUp = vec3.create();
-        this.keyPress = null;
+        this.keyDown = new Set();
         vec3.set(this.WorldUp, 0.0, 1.0, 0.0);
         this.updateCameraVectors();
         this.addMouseEvent();
@@ -78,26 +73,13 @@ export class Camera {
     }
 
     addMouseEvent(){
-        this.gl.canvas.addEventListener("click", (e) => {
-            if(!this.mouse.focus){
-                this.gl.canvas.style.cursor = "none";
-                this.mouse.focus = true;
-                this.mouse.lx = e.x;
-                this.mouse.ly = e.y;
-            }
-        });
         this.gl.canvas.addEventListener("mousemove", (e) => {
-            if(!this.mouse.focus) return false;
-            const dx = e.x - this.mouse.lx;
-            const dy = this.mouse.ly - e.y;
-            this.mouse.lx = e.x;
-            this.mouse.ly = e.y;
-            this.ProcessMouseMovement(dx, dy);
+            if(!this.kala.pointerLock) return false;
+            this.ProcessMouseMovement(-e.movementX, -e.movementY);
         });
     }
 
-    ProcessKeyAction(){
-        const k = this.keyPress;
+    ProcessKeyAction(k){
         if(k === "w"){
             const t = vec3.create();
             const desV = this.Speed * this.deltaTime;
@@ -125,10 +107,17 @@ export class Camera {
             vec3.scale(t, this.Right, desV);
             vec3.add(this.Position, this.Position, t);
         }
-        // console.log(k);
+
         if(k === " "){
             const t = vec3.create();
             const desV = this.Speed * this.deltaTime;
+            vec3.scale(t, this.WorldUp, desV);
+            vec3.add(this.Position, this.Position, t);
+        }
+
+        if(k === "c"){
+            const t = vec3.create();
+            const desV = -this.Speed * this.deltaTime;
             vec3.scale(t, this.WorldUp, desV);
             vec3.add(this.Position, this.Position, t);
         }
@@ -140,19 +129,17 @@ export class Camera {
         this.gl.canvas.setAttribute("tabindex", 1);
         this.gl.canvas.addEventListener("keydown", (e) => {
             e.preventDefault();
+            if(!this.kala.pointerLock) return false;
             const k = e.key;
-            if(k === "Escape"){
-                this.gl.canvas.style.cursor = "default";
-                this.mouse.focus = false;
-            }
-            if(this.mouse.focus === false) return false;
-            this.keyPress = k;
+            this.keyDown.add(k);
             return false;
         });
 
         this.gl.canvas.addEventListener("keyup", (e) => {
             e.preventDefault();
-            this.keyPress = null;
+            if(!this.kala.pointerLock) return false;
+            const k = e.key;
+            this.keyDown.delete(k);
             return false;
         });
     }

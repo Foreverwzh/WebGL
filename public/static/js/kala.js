@@ -14,6 +14,8 @@ export class Kala{
         this.view = null;
         this.Geometry = Geometry;
         this.lastRenderTime = null;
+        this.pointerLock = false;
+        this.fullScreen();
     }
     
     initScene(){
@@ -98,6 +100,7 @@ export class Kala{
 
     addCamera(){
         this.camera = new Camera(this.gl);
+        this.camera.kala = this;
         return this.camera;
     }
 
@@ -189,6 +192,47 @@ export class Kala{
         }
     }
 
+    fullScreen(){
+        const elem = this.gl.canvas;
+        const _this = this;
+        document.addEventListener('fullscreenchange', fullscreenChange, false);
+        document.addEventListener('pointerlockchange', pointerLockChange, false);
+        document.addEventListener('pointerlockerror', pointerLockError, false);
+        function fullscreenChange() {
+            if (document.webkitFullscreenElement === elem ||
+                document.mozFullscreenElement === elem ||
+                document.mozFullScreenElement === elem) {
+                elem.requestPointerLock = elem.requestPointerLock ||
+                                        elem.mozRequestPointerLock ||
+                                        elem.webkitRequestPointerLock;
+                elem.requestPointerLock();
+            }
+        }
+        function pointerLockChange() {
+            if (document.pointerLockElement === elem || 
+                document.mozPointerLockElement === elem ||
+                document.webkitPointerLockElement === elem) {
+                 _this.pointerLock = true;
+                console.log("指针锁定成功了。");
+            } else {
+                _this.pointerLock = false;
+                console.log("指针锁定已丢失。");
+            }
+        }
+        function pointerLockError() {
+            _this.pointerLock = false;
+            console.log("锁定指针时出错。");
+        }
+        elem.requestFullscreen = elem.requestFullscreen ||
+                                elem.mozRequestFullscreen ||
+                                elem.mozRequestFullScreen ||
+                                elem.webkitRequestFullscreen;
+        elem.addEventListener("click", ()=>{
+            elem.requestFullscreen();
+        }, false);
+        
+    }
+
     render(){
         if(!this.camera){
             console.error("Please add a camera before rendering.");
@@ -202,7 +246,9 @@ export class Kala{
             this.lastRenderTime = now;
         }
         this.camera.deltaTime = this.deltaTime * 0.001;
-        this.camera.ProcessKeyAction();
+        for(const k of this.camera.keyDown){
+            this.camera.ProcessKeyAction(k);
+        }
         const gl = this.gl;
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
