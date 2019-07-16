@@ -5,114 +5,104 @@
 </template>
 
 <script lang="ts">
+import { Component, Vue, Emit } from 'vue-property-decorator'
+import axios from 'axios'
 import { vec3, mat4 } from 'gl-matrix'
-// import * as math from "mathjs"
 import { Kala } from './../../public/static/js/kala'
 import { OBJLoader } from './../../public/static/js/OBJLoader'
-export default {
-    data() {
+
+@Component
+export default class Box extends Vue {
+    glEle: any;
+    kala: Kala;
+    boxInfo() {
+        const data = [
+            -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
+            0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 0.0,
+            0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
+            0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
+            -0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 1.0,
+            -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
+
+            -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
+            0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 0.0,
+            0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
+            0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
+            -0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 1.0,
+            -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
+
+            -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
+            -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,  1.0, 1.0,
+            -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
+            -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
+            -0.5, -0.5,  0.5, -1.0,  0.0,  0.0,  0.0, 0.0,
+            -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
+
+            0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
+            0.5,  0.5, -0.5,  1.0,  0.0,  0.0,  1.0, 1.0,
+            0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
+            0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
+            0.5, -0.5,  0.5,  1.0,  0.0,  0.0,  0.0, 0.0,
+            0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
+
+            -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
+            0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  1.0, 1.0,
+            0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
+            0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
+            -0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  0.0, 0.0,
+            -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
+
+            -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0,
+            0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  1.0, 1.0,
+            0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
+            0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
+            -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0, 0.0,
+            -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0
+        ];
+        const d1: number[] = [], d2: number[] = [], d3: number[] = [];
+        data.forEach((i, index) => {
+            const a = index % 8;
+            if (a >= 0 && a < 3) {
+                d1.push(i);
+            }
+            if (a >= 3 && a < 6) {
+                d2.push(i);
+            }
+            if (a >= 6 && a < 8) {
+                d3.push(i);
+            }
+        })
         return {
-            glEle: null,
-            then: 0,
-            kala: null
+            vertexes: d1,
+            normals: d2,
+            textureCoords: d3
         }
-    },
-    methods: {
-        boxInfo() {
-            const data = [
-               -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
-                0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 0.0,
-                0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
-                0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0, 1.0,
-                -0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 1.0,
-                -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0, 0.0,
-
-                -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
-                0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 0.0,
-                0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
-                0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   1.0, 1.0,
-                -0.5,  0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 1.0,
-                -0.5, -0.5,  0.5,  0.0,  0.0, 1.0,   0.0, 0.0,
-
-                -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
-                -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,  1.0, 1.0,
-                -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
-                -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0, 1.0,
-                -0.5, -0.5,  0.5, -1.0,  0.0,  0.0,  0.0, 0.0,
-                -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0, 0.0,
-
-                0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
-                0.5,  0.5, -0.5,  1.0,  0.0,  0.0,  1.0, 1.0,
-                0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
-                0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0, 1.0,
-                0.5, -0.5,  0.5,  1.0,  0.0,  0.0,  0.0, 0.0,
-                0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0, 0.0,
-
-                -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
-                0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  1.0, 1.0,
-                0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
-                0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0, 0.0,
-                -0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  0.0, 0.0,
-                -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0, 1.0,
-
-                -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0,
-                0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  1.0, 1.0,
-                0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
-                0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
-                -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0, 0.0,
-                -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0
-            ];
-            const d1 = [], d2 = [], d3 = [];
-            data.forEach((i, index) => {
-                const a = index % 8;
-                if (a >= 0 && a < 3) {
-                    d1.push(i);
-                }
-                if (a >= 3 && a < 6) {
-                    d2.push(i);
-                }
-                if (a >= 6 && a < 8) {
-                    d3.push(i);
-                }
-            })
-            return {
-                vertexes: d1,
-                normals: d2,
-                textureCoords: d3
-            }
-        },
-        getShaderSource(vs_url, fs_url) {
-            return Promise.all([axios.get(vs_url), axios.get(fs_url)]);
-        },
-        render(now) {
-            now *= 0.001;
-            const deltaTime = now - this.then;
-            this.then = now;
-            // this.kala.geometries.forEach(geo => {
-            //     geo.rotate(deltaTime, [Math.random(), Math.random(), Math.random()]);
-            // })
-            this.kala.render();
-            requestAnimationFrame(this.render);
-        },
-        addResizeEvent() {
+    }
+    getShaderSource(vs_url: string, fs_url: string) {
+        return Promise.all([axios.get(vs_url), axios.get(fs_url)]);
+    }
+    renderer() {
+        this.kala.render();
+        requestAnimationFrame(this.renderer);
+    }
+    addResizeEvent() {
+        this.resetCanvas();
+        window.onresize = (e) => {
             this.resetCanvas();
-            window.onresize = (e) => {
-                this.resetCanvas(e);
-            }
-        },
-        resetCanvas(e) {
-            const canvas = this.glEle;
-            canvas.style.width = document.body.clientWidth + 'px';
-            canvas.style.height = document.body.clientHeight + 'px';
-            let devicePixelRatio = window.devicePixelRatio || 1;
-            let w = canvas.clientWidth * devicePixelRatio;
-            let h = canvas.clientHeight * devicePixelRatio;
-            if (canvas.width !== w || canvas.height !== h) {
-                canvas.width = w;
-                canvas.height = h;
-            }
         }
-    },
+    }
+    resetCanvas() {
+        const canvas = this.glEle;
+        canvas.style.width = document.body.clientWidth + 'px';
+        canvas.style.height = document.body.clientHeight + 'px';
+        let devicePixelRatio = window.devicePixelRatio || 1;
+        let w = canvas.clientWidth * devicePixelRatio;
+        let h = canvas.clientHeight * devicePixelRatio;
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
+    }
     async mounted() {
         this.glEle = document.getElementById('glcanvas');
         const kala = this.kala = new Kala(this.glEle);
@@ -123,9 +113,8 @@ export default {
 
         kala.initShaderProgram(vsSource, fsSource);
 
-        this.camera = kala.addCamera();
-        this.camera.setPosition([0, 0, 10]);
-        this.camera.Speed = 10;
+        kala.camera.setPosition([0, 0, 10]);
+        kala.camera.Speed = 10;
         const box = this.boxInfo();
         const texture = kala.loadTexture('/static/image/container2.png');
         const cubePositions = [
@@ -146,7 +135,7 @@ export default {
             kala.add(geometry);
             geometry.translate(i);
         }
-        this.render(new Date());
+        this.renderer();
         this.addResizeEvent();
     }
 

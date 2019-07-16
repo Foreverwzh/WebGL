@@ -9,7 +9,7 @@ export class Geometry {
     public position: vec3;
     public texture: any;
 
-    constructor(vertices: [], normals: [], coords: []) {
+    constructor(vertices: number[], normals: number[], coords: number[]) {
         this.vertices = vertices;
         this.normals = normals;
         this.textureCoords = coords;

@@ -26,23 +26,22 @@ interface ProgramInfo {
 export class Kala {
     public gl: any;
     public camera: Camera;
-    public geometries: Geometry[];
+    public geometries: Geometry[] = [];
     public scene: mat4;
     public view: any;
-    public Geometry: any;
-    public lastRenderTime: Date;
-    public deltaTime: number;
-    public pointerLock: boolean;
+    public Geometry = Geometry;
+    public lastRenderTime: Date | null = null;
+    public deltaTime: number = 0;
+    public pointerLock: boolean = false;
     public programInfo: ProgramInfo;
 
     public constructor(canvas: any) {
         this.gl = canvas.getContext('webgl');
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-        this.geometries = [];
         this.scene = this.initScene();
-        this.Geometry = Geometry;
-        this.pointerLock = false;
+        this.camera = new Camera(this);
+        this.view = this.camera.getViewMatrix();
         this.fullScreen();
     }
 
@@ -204,13 +203,10 @@ export class Kala {
             this.programInfo.uniformLocations.view,
             false,
             this.view);
-        // Tell WebGL we want to affect texture unit 0
         gl.activeTexture(gl.TEXTURE0);
 
-        // Bind the texture to texture unit 0
         gl.bindTexture(gl.TEXTURE_2D, geometry.texture || this.loadTexture(''));
 
-        // Tell the shader we bound the texture to texture unit 0
         gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0);
 
         {

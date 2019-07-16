@@ -21,7 +21,7 @@ export class Camera {
     public Pitch: number = 0.0;
     public Speed: number = 1.0;
     public Sensitivity: number = 0.02;
-    public gl: any = null;
+    public gl: any;
     public deltaTime: number = 0;
 
     public Position: vec3 = vec3.create();
@@ -32,9 +32,9 @@ export class Camera {
     public keyDown: Set<string> = new Set();
     public kala: Kala;
 
-    public constructor(gl: any) {
-        this.gl = gl;
-
+    public constructor(kala: Kala) {
+        this.kala = kala;
+        this.gl = kala.gl;
         vec3.set(this.WorldUp, 0.0, 1.0, 0.0);
         this.updateCameraVectors();
         this.addMouseEvent();
