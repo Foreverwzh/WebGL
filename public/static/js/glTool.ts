@@ -1,4 +1,4 @@
-export function loadTexture(gl, url) {
+export function loadTexture(gl: any, url: string) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     const level = 0;
@@ -12,7 +12,7 @@ export function loadTexture(gl, url) {
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                     width, height, border, srcFormat, srcType,
                     pixel);
-
+    if (!url) return texture;
     const image = new Image();
     image.onload = () => {
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -31,6 +31,6 @@ export function loadTexture(gl, url) {
     return texture;
 }
 
-export function isPowerOf2(value) {
-    return (value & (value - 1)) == 0;
+export function isPowerOf2(value: number) {
+    return (value & (value - 1)) === 0;
 }

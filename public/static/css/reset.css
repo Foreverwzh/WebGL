@@ -1,0 +1,72 @@
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, figure,input, textarea, p, span,blockquote, th, td {
+  padding:0;
+  margin:0;
+  -webkit-box-sizing:border-box; -moz-box-sizing:border-box; box-sizing:border-box;
+
+}
+h1,h2,h3,h4,h5,h6{ font-weight:normal;}
+html,body{
+  -webkit-text-size-adjust:100%;
+  font-size:12px;
+  font-family: "Blue Sky Standard Regular","Noto Sans SC Regular",sans-serif;
+  color: #434343;
+  background: #fff;
+  height: 100%;
+}
+fieldset, img {
+  border:0;
+}
+
+a,img{
+  -webkit-touch-callout: none;
+  text-decoration: none;
+}
+table {
+  border-collapse:collapse;
+  border-spacing:0;
+}
+
+ol, ul {
+  list-style:none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size:100%;
+}
+
+q:before, q:after {
+  content:'';
+}
+
+a {
+  cursor:pointer; text-decoration:none; color: #434343;
+}
+
+.clearfix {
+  *zoom:1;
+}
+
+.clearfix:after {
+  content:".";
+  display:block;
+  clear:both;
+  visibility:hidden;
+  line-height:0;
+  height:0;
+}
+button,select,textarea{
+  background: #fff;
+  -webkit-appearance: none;
+  border-radius: 0;
+  border:0;
+  outline:none;
+}
+textarea,optgroup,option,select,button{vertical-align: middle;font:inherit;}
+a,button,optgroup,select,textarea,span,div {
+
+  -webkit-tap-highlight-color:rgba(0,0,0,0);
+
+}
+
+
+

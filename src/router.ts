@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Home from './views/Home.vue'
 import Box from './views/Box.vue'
+import ObjectLoad from './views/ObjectLoad.vue'
 
 Vue.use(Router)
 
@@ -18,6 +19,11 @@ export default new Router({
       path: '/box',
       name: 'box',
       component: Box
+    },
+    {
+      path: '/objectload',
+      name: 'objectload',
+      component: ObjectLoad
     },
     {
       path: '/about',
