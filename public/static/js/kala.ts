@@ -1,7 +1,9 @@
 import { Camera } from './camera'
-import { loadTexture } from './glTool'
+import { isPowerOf2 } from './glTool'
 import { mat4 } from 'gl-matrix'
+import { Mesh } from './mesh'
 import { Geometry } from './geometry'
+import { Material } from './material'
 
 interface AttribLocations {
   vertexPosition: any
@@ -26,10 +28,12 @@ interface ProgramInfo {
 export class Kala {
   public gl: any
   public camera: Camera
-  public geometries: Geometry[] = []
+  public objects: Mesh[] = []
   public scene: mat4
   public view: any
+  public Mesh = Mesh
   public Geometry = Geometry
+  public Material = Material
   public lastRenderTime: Date | null = null
   public deltaTime: number = 0
   public pointerLock: boolean = false
@@ -72,10 +76,6 @@ export class Kala {
       return null
     }
     return shader
-  }
-
-  loadTexture (url: string) {
-    return loadTexture(this.gl, url)
   }
 
   initShaderProgram (vsSource: string, fsSource: string) {
@@ -131,8 +131,8 @@ export class Kala {
     return this.camera
   }
 
-  add (geometry: Geometry) {
-    this.geometries.push(geometry)
+  add (mesh: Mesh) {
+    this.objects.push(mesh)
   }
 
   initBuffers (data: number[]) {
@@ -143,13 +143,47 @@ export class Kala {
     return dataBuffer
   }
 
-  renderGeometry (geometry: Geometry) {
+  loadTexture (url: string) {
     const gl = this.gl
-    const vertexBuffer = this.initBuffers(geometry.vertices)
-    const normalBuffer = this.initBuffers(geometry.normals)
-    const texcoordBuffer = this.initBuffers(geometry.textureCoords)
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    const level = 0
+    const internalFormat = gl.RGBA
+    const width = 1
+    const height = 1
+    const border = 0
+    const srcFormat = gl.RGBA
+    const srcType = gl.UNSIGNED_BYTE
+    const pixel = new Uint8Array([0, 0, 255, 255])
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                      width, height, border, srcFormat, srcType,
+                      pixel)
+    if (!url) return texture
+    const image = new Image()
+    image.onload = () => {
+      gl.bindTexture(gl.TEXTURE_2D, texture)
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                      srcFormat, srcType, image)
+      if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+        gl.generateMipmap(gl.TEXTURE_2D)
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+      }
+    }
+    image.src = url
+    return texture
+  }
+
+  renderObject (mesh: Mesh) {
+    const gl = this.gl
+    const vertexBuffer = this.initBuffers(mesh.geometry.vertices)
+    const normalBuffer = this.initBuffers(mesh.geometry.normals)
+    const texcoordBuffer = this.initBuffers(mesh.geometry.textureCoords)
     const normalMatrix = mat4.create()
-    mat4.invert(normalMatrix, geometry.Model)
+    mat4.invert(normalMatrix, mesh.geometry.Model)
     mat4.transpose(normalMatrix, normalMatrix)
     {
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
@@ -194,7 +228,7 @@ export class Kala {
     gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.model,
             false,
-            geometry.Model)
+            mesh.geometry.Model)
     gl.uniformMatrix4fv(
             this.programInfo.uniformLocations.normalMatrix,
             false,
@@ -205,13 +239,13 @@ export class Kala {
             this.view)
     gl.activeTexture(gl.TEXTURE0)
 
-    gl.bindTexture(gl.TEXTURE_2D, geometry.texture || this.loadTexture(''))
+    gl.bindTexture(gl.TEXTURE_2D, mesh.material.textures[0] || this.loadTexture(''))
 
     gl.uniform1i(this.programInfo.uniformLocations.uSampler, 0)
 
     {
       const offset = 0
-      const vertexCount = geometry.vertices.length / 3
+      const vertexCount = mesh.geometry.vertices.length / 3
       gl.drawArrays(gl.TRIANGLES, offset, vertexCount)
     }
   }
@@ -277,6 +311,6 @@ export class Kala {
     this.view = this.camera.getViewMatrix()
 
     gl.useProgram(this.programInfo.program)
-    this.geometries.forEach(geometry => this.renderGeometry(geometry))
+    this.objects.forEach(mesh => this.renderObject(mesh))
   }
 }

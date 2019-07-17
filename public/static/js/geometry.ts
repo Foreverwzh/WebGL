@@ -7,7 +7,6 @@ export class Geometry {
   public color: number[]
   public Model: mat4
   public position: vec3
-  public texture: any
 
   constructor (vertices: number[], normals: number[], coords: number[]) {
     this.vertices = vertices

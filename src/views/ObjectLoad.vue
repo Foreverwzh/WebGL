@@ -58,7 +58,9 @@ export default class ObjectLoad extends Vue {
       console.log(data)
       data.objects.forEach((obj: any) => {
         const geometry = new kala.Geometry(obj.geometry.vertices, obj.geometry.normals, obj.geometry.textureCoords)
-        this.kala.add(geometry)
+        const material = new kala.Material()
+        const mesh = new kala.Mesh(geometry, material)
+        this.kala.add(mesh)
       })
     })
   }

@@ -3,9 +3,9 @@ import { create, all } from 'mathjs'
 import { Kala } from './kala'
 
 declare module 'mathjs' {
-    interface MathJsStatic {
-      radians (angle: number): number
-    }
+  interface MathJsStatic {
+    radians (angle: number): number
+  }
 }
 
 const math = create(all, {})
@@ -19,12 +19,12 @@ math.import({
 export class Camera {
   public Yaw: number = -90
   public Pitch: number = 0.0
-  public Speed: number = 1.0
+  public Speed: number = 10.0
   public Sensitivity: number = 0.02
   public gl: any
   public deltaTime: number = 0
 
-  public Position: vec3 = vec3.create()
+  public Position: vec3 = vec3.fromValues(0, 0, 10)
   public Front: vec3 = vec3.create()
   public Right: vec3 = vec3.create()
   public Up: vec3 = vec3.create()

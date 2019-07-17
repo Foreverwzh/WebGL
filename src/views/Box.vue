@@ -134,8 +134,10 @@ export default class Box extends Vue {
     ]
     for (let i of cubePositions) {
       const geometry = new kala.Geometry(box.vertexes, box.normals, box.textureCoords)
-      geometry.texture = texture
-      kala.add(geometry)
+      const material = new kala.Material()
+      material.addTexture(texture)
+      const mesh = new kala.Mesh(geometry, material)
+      kala.add(mesh)
       geometry.translate(i)
     }
     this.renderer()
