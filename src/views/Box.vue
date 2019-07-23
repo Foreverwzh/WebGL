@@ -133,7 +133,16 @@ export default class Box extends Vue {
       vec3.fromValues(-1.3, 1.0, -1.5)
     ]
     for (let i of cubePositions) {
-      const geometry = new kala.Geometry(box.vertexes, box.normals, box.textureCoords)
+      const geometry = new kala.Geometry({
+        data: box.vertexes,
+        stride: 12
+      }, {
+        data: box.normals,
+        stride: 12
+      }, {
+        data: box.textureCoords,
+        stride: 8
+      })
       const material = new kala.Material()
       material.addTexture(texture)
       const mesh = new kala.Mesh(geometry, material)

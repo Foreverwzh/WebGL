@@ -2,8 +2,9 @@ import { Camera } from './camera'
 import { isPowerOf2 } from './glTool'
 import { mat4 } from 'gl-matrix'
 import { Mesh } from './mesh'
-import { Geometry } from './geometry'
+import { Geometry, VertexAttribute } from './geometry'
 import { Material } from './material'
+import { Group } from './group'
 
 interface AttribLocations {
   vertexPosition: any
@@ -28,7 +29,7 @@ interface ProgramInfo {
 export class Kala {
   public gl: any
   public camera: Camera
-  public objects: Mesh[] = []
+  public objects: any[] = []
   public scene: mat4
   public view: any
   public Mesh = Mesh
@@ -131,15 +132,20 @@ export class Kala {
     return this.camera
   }
 
-  add (mesh: Mesh) {
-    this.objects.push(mesh)
+  add (obj: any) {
+    this.objects.push(obj)
   }
 
-  initBuffers (data: number[]) {
+  initBufferData (attr: VertexAttribute) {
+    if (attr.buffer) {
+      return attr.buffer
+    }
     const gl = this.gl
     const dataBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, dataBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attr.data), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    attr.buffer = dataBuffer
     return dataBuffer
   }
 
@@ -177,47 +183,59 @@ export class Kala {
     return texture
   }
 
-  renderObject (mesh: Mesh) {
+  renderObject (obj) {
+    if (obj.constructor === Group) {
+      obj.children.forEach(c => {
+        this.renderObject(c)
+      })
+      return
+    }
+    if (obj.constructor === Mesh) {
+      this.renderMesh(obj)
+    }
+  }
+
+  renderMesh (mesh: Mesh) {
     const gl = this.gl
-    const vertexBuffer = this.initBuffers(mesh.geometry.vertices)
-    const normalBuffer = this.initBuffers(mesh.geometry.normals)
-    const texcoordBuffer = this.initBuffers(mesh.geometry.textureCoords)
+    const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
+    const normalBuffer = this.initBufferData(mesh.geometry.normals)
+    const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
     const normalMatrix = mat4.create()
     mat4.invert(normalMatrix, mesh.geometry.Model)
     mat4.transpose(normalMatrix, normalMatrix)
     {
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+      gl.bindBuffer(gl[mesh.geometry.vertices.target], vertexBuffer)
       gl.vertexAttribPointer(
                 this.programInfo.attribLocations.vertexPosition,
-                3,
-                gl.FLOAT,
-                false,
-                12,
-                0)
+                mesh.geometry.vertices.size,
+                gl[mesh.geometry.vertices.type],
+                mesh.geometry.vertices.normalized,
+                mesh.geometry.vertices.stride,
+                mesh.geometry.vertices.offset)
       gl.enableVertexAttribArray(
                 this.programInfo.attribLocations.vertexPosition)
     }
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer)
+    if (mesh.geometry.normals.data.length > 0) {
+      gl.bindBuffer(gl[mesh.geometry.normals.target], normalBuffer)
       gl.vertexAttribPointer(
                 this.programInfo.attribLocations.vertexNormal,
-                3,
-                gl.FLOAT,
-                false,
-                12,
-                0)
+                mesh.geometry.normals.size,
+                gl[mesh.geometry.normals.type],
+                mesh.geometry.normals.normalized,
+                mesh.geometry.normals.stride,
+                mesh.geometry.normals.offset)
       gl.enableVertexAttribArray(
                 this.programInfo.attribLocations.vertexNormal)
     }
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer)
+    if (mesh.geometry.textureCoords.data.length > 0) {
+      gl.bindBuffer(gl[mesh.geometry.textureCoords.target], texcoordBuffer)
       gl.vertexAttribPointer(
                 this.programInfo.attribLocations.textureCoord,
-                2,
-                gl.FLOAT,
-                false,
-                8,
-                0)
+                mesh.geometry.textureCoords.size,
+                gl[mesh.geometry.textureCoords.type],
+                mesh.geometry.textureCoords.normalized,
+                mesh.geometry.textureCoords.stride,
+                mesh.geometry.textureCoords.offset)
       gl.enableVertexAttribArray(
                 this.programInfo.attribLocations.textureCoord)
     }
@@ -245,7 +263,7 @@ export class Kala {
 
     {
       const offset = 0
-      const vertexCount = mesh.geometry.vertices.length / 3
+      const vertexCount = mesh.geometry.count
       gl.drawArrays(gl.TRIANGLES, offset, vertexCount)
     }
   }
@@ -311,6 +329,8 @@ export class Kala {
     this.view = this.camera.getViewMatrix()
 
     gl.useProgram(this.programInfo.program)
-    this.objects.forEach(mesh => this.renderObject(mesh))
+    this.objects.forEach(obj => {
+      this.renderObject(obj)
+    })
   }
 }

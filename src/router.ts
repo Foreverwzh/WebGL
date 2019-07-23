@@ -3,6 +3,7 @@ import Router from 'vue-router'
 import Home from './views/Home.vue'
 import Box from './views/Box.vue'
 import ObjectLoad from './views/ObjectLoad.vue'
+import GLTFView from './views/GLTFView.vue'
 
 Vue.use(Router)
 
@@ -24,6 +25,11 @@ export default new Router({
       path: '/objectload',
       name: 'objectload',
       component: ObjectLoad
+    },
+    {
+      path: '/gltfview',
+      name: 'gltfview',
+      component: GLTFView
     },
     {
       path: '/about',
