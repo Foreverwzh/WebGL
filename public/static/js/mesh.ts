@@ -1,11 +1,10 @@
 import { Geometry } from './geometry'
 import { Material } from './material'
 export class Mesh {
+  public name: string = ''
   public geometry: Geometry
   public material: Material
   public parent: any
-  public readonly type: string = 'Mesh'
-  public readonly isMesh: boolean = true
 
   constructor (geometry: Geometry, material: Material) {
     this.parent = null

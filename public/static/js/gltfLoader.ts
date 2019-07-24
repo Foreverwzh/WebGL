@@ -44,7 +44,7 @@ export class GLTFLoader {
   }
 
   createMesh (info): Group {
-    const mesh = new Group()
+    const mesh = new Group(info.name)
     info.primitives.forEach(primitive => {
       const geometry = this.createGeometry(primitive)
       const material = this.createMaterial(primitive)
@@ -60,7 +60,8 @@ export class GLTFLoader {
     const vertices = this.getBufferData(attrs.POSITION)
     const nomals = this.getBufferData(attrs.NORMAL)
     const coords = this.getBufferData(attrs.TEXCOORD_0)
-    const geometry = new Geometry(vertices, nomals, coords)
+    const indices = this.getIndices(primitive.indices)
+    const geometry = new Geometry(vertices, nomals, coords, indices)
     return geometry
   }
 
@@ -89,12 +90,13 @@ export class GLTFLoader {
       this.bufferData[bufferIndex] = data
     }
     return {
+      name: accessor.name,
       data: data,
-      type: this.getComponentType(accessor.componentType),
+      componentType: accessor.componentType,
       normalized: accessor.normalized || false,
-      offset: bufferView.byteOffset || 0,
+      offset: accessor.byteOffset + bufferView.byteOffset,
       stride: bufferView.byteStride,
-      target: this.getTargetType(bufferView.target || 34962),
+      target: bufferView.target,
       size: this.getSize(accessor.type),
       count: accessor.count
     }
@@ -148,49 +150,46 @@ export class GLTFLoader {
 
   createMaterial (primitive): Material {
     const material = new Material()
+    const materialIndex = primitive.material
+    if (typeof materialIndex !== 'number') return material
+    const materialInfo = this.gltf.materials[materialIndex]
     return material
   }
 
-  getComponentType (num: number): string {
-    let str: string
-    switch (num) {
-      case 5120:
-        str = 'BYTE'
-        break
-      case 5121:
-        str = 'UNSIGNED_BYTE'
-        break
-      case 5122:
-        str = 'SHORT'
-        break
-      case 5123:
-        str = 'UNSIGNED_SHORT'
-        break
-      case 5125:
-        str = 'UNSIGNED_INT'
-        break
-      case 5126:
-        str = 'FLOAT'
-        break
-      default:
-        str = 'FlOAT'
+  getIndices (accessorIndex: number) {
+    if (typeof accessorIndex !== 'number') return null
+    const accessor = this.gltf.accessors[accessorIndex]
+    const bufferView = this.gltf.bufferViews[accessor.bufferView]
+    if (bufferView.target !== 34963) return null
+    const bufferIndex = bufferView.buffer
+    let data
+    if (this.bufferData[bufferIndex]) {
+      data = this.bufferData[bufferIndex]
+    } else {
+      const buffer = this.gltf.buffers[bufferIndex]
+      const dataUriRegex = /^data:(.*?)\;(base64)?,(.*)$/
+      const dataUriRegexResult = dataUriRegex.exec(buffer.uri)
+      if (dataUriRegexResult === null) {
+        axios.get(buffer.uri).then(res => {
+          this.bufferData[bufferIndex] = res.data
+          data = res.data
+        }).catch(err => {
+          console.error(`load ${buffer.uri} error: ${err}`)
+        })
+      } else {
+        data = this.decodeDataUri(buffer.uri, 'arraybuffer')
+      }
+      this.bufferData[bufferIndex] = data
     }
-    return str
-  }
 
-  getTargetType (num: number): string {
-    let str: string
-    switch (num) {
-      case 34962:
-        str = 'ARRAY_BUFFER'
-        break
-      case 34963:
-        str = 'ELEMENT_ARRAY_BUFFER'
-        break
-      default:
-        str = 'ARRAY_BUFFER'
+    return {
+      data: data,
+      componentType: accessor.componentType,
+      offset: accessor.byteOffset + bufferView.byteOffset,
+      target: bufferView.target,
+      size: this.getSize(accessor.type),
+      count: accessor.count
     }
-    return str
   }
 
   getSize (str: string): number {

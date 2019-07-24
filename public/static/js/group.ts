@@ -2,9 +2,9 @@ export class Group {
   public children: any[]
   public parent: Group | null
   public name: string
-  constructor () {
+  constructor (name?: string) {
     this.parent = null
-    this.name = ''
+    this.name = name || ''
     this.children = []
   }
 
