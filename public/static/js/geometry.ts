@@ -60,7 +60,7 @@ export class Geometry {
     if (this.indices) {
       this.count = this.indices.count || this.indices.data.length
     } else {
-      this.count = vertices.count || vertices.data.length / vertices.size
+      this.count = this.vertices.count || (this.vertices.data.length / this.vertices.size)
     }
     this.color = [0, 0, 255, 255]
     this.Model = mat4.create()

@@ -2,6 +2,8 @@ import { Mesh } from './mesh'
 import { VertexAttribute, Geometry } from './geometry'
 import { Material } from './material'
 import { Group } from './group'
+import { Texture, NormalTexture, EmissiveTexture, OcclusionTexture, PBRTexture } from './texture'
+import { arrayBufferToImageURL } from './glTool'
 import axios from 'axios'
 
 interface GLTF {
@@ -57,19 +59,34 @@ export class GLTFLoader {
 
   createGeometry (primitive): Geometry {
     const attrs = primitive.attributes
-    const vertices = this.getBufferData(attrs.POSITION)
-    const nomals = this.getBufferData(attrs.NORMAL)
-    const coords = this.getBufferData(attrs.TEXCOORD_0)
+    const vertices = this.dataAttribute(attrs.POSITION)
+    const nomals = this.dataAttribute(attrs.NORMAL)
+    const coords = this.dataAttribute(attrs.TEXCOORD_0)
     const indices = this.getIndices(primitive.indices)
     const geometry = new Geometry(vertices, nomals, coords, indices)
     return geometry
   }
 
-  getBufferData (accessorIndex: number) {
+  dataAttribute (accessorIndex: number) {
     if (typeof accessorIndex !== 'number') return {}
     const accessor = this.gltf.accessors[accessorIndex]
     const bufferView = this.gltf.bufferViews[accessor.bufferView]
     const bufferIndex = bufferView.buffer
+    const data = this.getBufferData(bufferIndex)
+    return {
+      name: accessor.name,
+      data: data,
+      componentType: accessor.componentType,
+      normalized: accessor.normalized || false,
+      offset: accessor.byteOffset + bufferView.byteOffset,
+      stride: bufferView.byteStride,
+      target: bufferView.target,
+      size: this.getSize(accessor.type),
+      count: accessor.count
+    }
+  }
+
+  getBufferData (bufferIndex: number) {
     let data
     if (this.bufferData[bufferIndex]) {
       data = this.bufferData[bufferIndex]
@@ -89,17 +106,7 @@ export class GLTFLoader {
       }
       this.bufferData[bufferIndex] = data
     }
-    return {
-      name: accessor.name,
-      data: data,
-      componentType: accessor.componentType,
-      normalized: accessor.normalized || false,
-      offset: accessor.byteOffset + bufferView.byteOffset,
-      stride: bufferView.byteStride,
-      target: bufferView.target,
-      size: this.getSize(accessor.type),
-      count: accessor.count
-    }
+    return data
   }
 
   decodeDataUriText (isBase64: boolean, data: string): string {
@@ -153,6 +160,26 @@ export class GLTFLoader {
     const materialIndex = primitive.material
     if (typeof materialIndex !== 'number') return material
     const materialInfo = this.gltf.materials[materialIndex]
+    material.name = materialInfo.name || ''
+    // if (materialInfo.normalTexture && typeof materialInfo.normalTexture.index === 'number') {
+    //   const texture = this.createTexture(this.gltf.textures[materialInfo.normalTexture.index], 'normal')
+    //   material.addTexture(texture)
+    // }
+    // if (materialInfo.emissiveTexture && typeof materialInfo.emissiveTexture.index === 'number') {
+    //   const texture = this.createTexture(this.gltf.textures[materialInfo.emissiveTexture.index], 'emissive')
+    //   material.addTexture(texture)
+    // }
+    // if (materialInfo.occlusionTexture && typeof materialInfo.occlusionTexture.index === 'number') {
+    //   const texture = this.createTexture(this.gltf.textures[materialInfo.occlusionTexture.index], 'occlusion')
+    //   material.addTexture(texture)
+    // }
+    if (materialInfo.pbrMetallicRoughness && materialInfo.pbrMetallicRoughness.baseColorTexture) {
+      const texture: PBRTexture = this.createTexture(this.gltf.textures[materialInfo.pbrMetallicRoughness.baseColorTexture.index], 'pbr')
+      texture.baseColorFactor = materialInfo.pbrMetallicRoughness.baseColorFactor || [1, 1, 1, 1]
+      texture.roughnessFactor = materialInfo.pbrMetallicRoughness.roughnessFactor || 1
+      texture.metallicFactor = materialInfo.metallicFactor || 1
+      material.addAlbedoMap(texture)
+    }
     return material
   }
 
@@ -162,25 +189,7 @@ export class GLTFLoader {
     const bufferView = this.gltf.bufferViews[accessor.bufferView]
     if (bufferView.target !== 34963) return null
     const bufferIndex = bufferView.buffer
-    let data
-    if (this.bufferData[bufferIndex]) {
-      data = this.bufferData[bufferIndex]
-    } else {
-      const buffer = this.gltf.buffers[bufferIndex]
-      const dataUriRegex = /^data:(.*?)\;(base64)?,(.*)$/
-      const dataUriRegexResult = dataUriRegex.exec(buffer.uri)
-      if (dataUriRegexResult === null) {
-        axios.get(buffer.uri).then(res => {
-          this.bufferData[bufferIndex] = res.data
-          data = res.data
-        }).catch(err => {
-          console.error(`load ${buffer.uri} error: ${err}`)
-        })
-      } else {
-        data = this.decodeDataUri(buffer.uri, 'arraybuffer')
-      }
-      this.bufferData[bufferIndex] = data
-    }
+    const data = this.getBufferData(bufferIndex)
 
     return {
       data: data,
@@ -220,5 +229,38 @@ export class GLTFLoader {
         num = 3
     }
     return num
+  }
+
+  createTexture (texInfo, type) {
+    let texture
+    switch (type) {
+      case 'normal':
+        texture = new NormalTexture(texInfo.name)
+        break
+      case 'emissive':
+        texture = new EmissiveTexture(texInfo.name)
+        break
+      case 'occlusion':
+        texture = new OcclusionTexture(texInfo.name)
+        break
+      case 'pbr':
+        texture = new PBRTexture(texInfo.name)
+        break
+      default:
+        texture = new Texture(texInfo.name)
+    }
+    if (typeof texInfo.source !== 'number') return texture
+    const source = this.gltf.images[texInfo.source]
+    const bufferView = this.gltf.bufferViews[source.bufferView]
+    const bufferIndex = bufferView.buffer
+    const data = this.getBufferData(bufferIndex)
+    const imgData: ArrayBuffer = data.slice(bufferView.byteOffset, bufferView.byteOffset + bufferView.byteLength)
+    const imageUrl = arrayBufferToImageURL(imgData, source.mimeType)
+    texture.source = imageUrl
+    // texture.source = new Uint8Array(imgData)
+    if (typeof texInfo.sampler !== 'number') return texture
+    const sampler = this.gltf.samplers[texInfo.sampler]
+    texture.setSampler(sampler)
+    return texture
   }
 }

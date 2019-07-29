@@ -65,7 +65,7 @@ export default class ObjectLoad extends Vue {
       const loader = new GLTFLoader()
       kala.add(loader.load(res.data))
     })
-    console.log(kala)
+    console.log(kala.objects)
   }
 
 }

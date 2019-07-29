@@ -21,7 +21,7 @@ export class Camera {
   public Pitch: number = 0.0
   public Speed: number = 10.0
   public Sensitivity: number = 0.02
-  public gl: any
+  public gl: WebGLRenderingContext
   public deltaTime: number = 0
 
   public Position: vec3 = vec3.fromValues(0, 0, 10)
@@ -85,7 +85,7 @@ export class Camera {
   }
 
   addMouseEvent () {
-    this.gl.canvas.addEventListener('mousemove', (e: any) => {
+    this.gl.canvas.addEventListener('mousemove', (e: MouseEvent) => {
       if (!this.kala.pointerLock) return false
       this.ProcessMouseMovement(e.movementX, -e.movementY)
     })
@@ -138,8 +138,8 @@ export class Camera {
   }
 
   addKeyEvent () {
-    this.gl.canvas.setAttribute('tabindex', 1)
-    this.gl.canvas.addEventListener('keydown', (e: any) => {
+    this.gl.canvas.setAttribute('tabindex', '1')
+    this.gl.canvas.addEventListener('keydown', (e: KeyboardEvent) => {
       e.preventDefault()
       if (!this.kala.pointerLock) return false
       const k = e.key
@@ -147,7 +147,7 @@ export class Camera {
       return false
     })
 
-    this.gl.canvas.addEventListener('keyup', (e: any) => {
+    this.gl.canvas.addEventListener('keyup', (e: KeyboardEvent) => {
       e.preventDefault()
       if (!this.kala.pointerLock) return false
       const k = e.key

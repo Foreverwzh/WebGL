@@ -9,7 +9,6 @@ import { Component, Vue, Emit } from 'vue-property-decorator'
 import axios from 'axios'
 import { vec3, mat4 } from 'gl-matrix'
 import { Kala } from './../../public/static/js/kala'
-import { OBJLoader } from './../../public/static/js/OBJLoader'
 
 @Component
 export default class Box extends Vue {
@@ -119,7 +118,10 @@ export default class Box extends Vue {
     kala.camera.setPosition([0, 0, 10])
     kala.camera.Speed = 10
     const box = this.boxInfo()
-    const texture = kala.loadTexture('/static/image/container2.png')
+    const texture = new kala.PBRTexture()
+    texture.source = '/static/image/container2.png'
+    const material = new kala.Material()
+    material.addAlbedoMap(texture)
     const cubePositions = [
       vec3.fromValues(0.0, 0.0, 0.0),
       vec3.fromValues(2.0, 5.0, -15.0),
@@ -143,8 +145,6 @@ export default class Box extends Vue {
         data: box.textureCoords,
         stride: 8
       })
-      const material = new kala.Material()
-      material.addTexture(texture)
       const mesh = new kala.Mesh(geometry, material)
       kala.add(mesh)
       geometry.translate(i)

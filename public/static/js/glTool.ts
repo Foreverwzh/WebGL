@@ -43,3 +43,10 @@ export function getTargetType (num: number): string {
   }
   return str
 }
+
+export function arrayBufferToImageURL (imgData: ArrayBuffer, type: string = 'image/jpeg') {
+  const arrayBufferView = new Uint8Array(imgData)
+  const blob = new Blob([ arrayBufferView ], { type: type })
+  const imageUrl = URL.createObjectURL(blob)
+  return imageUrl
+}
