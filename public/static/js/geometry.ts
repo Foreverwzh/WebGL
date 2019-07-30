@@ -7,25 +7,25 @@ import { mat4, vec3 } from 'gl-matrix'
  */
 export interface VertexAttribute {
   name?: string
-  data: number[]
+  data: ArrayBuffer
   componentType: number
   size: number
   normalized: boolean
   stride: number
   offset: number
   target: number
-  buffer?: any
-  count?: number
+  buffer?: WebGLBuffer
+  count: number
 }
 
 export interface IndicesAttribute {
   name?: string
-  data: number[]
+  data: ArrayBuffer
   componentType: number
   offset: number
   target: number
-  count?: number
-  buffer?: any
+  count: number
+  buffer?: WebGLBuffer
 }
 /**
  *
@@ -58,9 +58,9 @@ export class Geometry {
     this.textureCoords = this._initVertexAttribute(textureCoords, 'TextureCoord')
     if (indices) this.indices = indices
     if (this.indices) {
-      this.count = this.indices.count || this.indices.data.length
+      this.count = this.indices.count
     } else {
-      this.count = this.vertices.count || (this.vertices.data.length / this.vertices.size)
+      this.count = this.vertices.count
     }
     this.color = [0, 0, 255, 255]
     this.Model = mat4.create()
@@ -85,7 +85,7 @@ export class Geometry {
   private _initVertexAttribute (obj: any, name?: string): VertexAttribute {
     return {
       name: obj.name || '',
-      data: obj.data || [],
+      data: obj.data || new ArrayBuffer(0),
       componentType: obj.componentType || 5126,
       size: obj.size || (name === 'TextureCoord' ? 2 : 3),
       normalized: obj.normalized || false,

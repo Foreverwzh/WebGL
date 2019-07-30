@@ -5,7 +5,16 @@ import { Mesh } from './mesh'
 import { Geometry, VertexAttribute, IndicesAttribute } from './geometry'
 import { Material } from './material'
 import { Group } from './group'
-import { Sampler, Texture, NormalTexture, PBRTexture } from './texture'
+import { Sampler, Texture, NormalTexture, AlbedoTexture } from './texture'
+
+const WEBGL_COMPONENT_TYPES = {
+  5120: Int8Array,
+  5121: Uint8Array,
+  5122: Int16Array,
+  5123: Uint16Array,
+  5125: Uint32Array,
+  5126: Float32Array
+}
 
 interface AttribLocations {
   vertexPosition: number
@@ -17,7 +26,6 @@ interface UniformLocations {
   projection: WebGLUniformLocation
   model: WebGLUniformLocation
   view: WebGLUniformLocation
-  normalMatrix: WebGLUniformLocation
   albedoMap: WebGLUniformLocation
 }
 
@@ -33,7 +41,7 @@ export class Kala {
   public Material = Material
   public Texture = Texture
   public NormalTexture = NormalTexture
-  public PBRTexture = PBRTexture
+  public AlbedoTexture = AlbedoTexture
   public util = util
 
   public gl: WebGLRenderingContext
@@ -109,6 +117,10 @@ export class Kala {
     }
 
     const shaderProgram = gl.createProgram()
+    if (!shaderProgram) {
+      console.error('Unable to create Program')
+      return null
+    }
     gl.attachShader(shaderProgram, vertexShader)
     gl.attachShader(shaderProgram, fragmentShader)
     gl.linkProgram(shaderProgram)
@@ -128,7 +140,6 @@ export class Kala {
         projection: gl.getUniformLocation(shaderProgram, 'uProjection'),
         model: gl.getUniformLocation(shaderProgram, 'uModel'),
         view: gl.getUniformLocation(shaderProgram, 'uView'),
-        normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
         albedoMap: gl.getUniformLocation(shaderProgram, 'albedoMap')
       }
     }
@@ -139,42 +150,18 @@ export class Kala {
     this.camera.kala = this
     return this.camera
   }
-
   add (obj: any) {
     this.objects.push(obj)
   }
 
-  initBufferData (attr: VertexAttribute | IndicesAttribute, isTexcoord: boolean = false) {
+  initBufferData (attr: VertexAttribute | IndicesAttribute) {
     if (attr.buffer) {
       return attr.buffer
     }
     const gl = this.gl
     const dataBuffer = gl.createBuffer()
     gl.bindBuffer(attr.target, dataBuffer)
-    // const typeStr = getComponentType(attr.componentType)
-    let typedArr
-    switch (attr.componentType) {
-      case 5120:
-        typedArr = new Int8Array(attr.data)
-        break
-      case 5121:
-        typedArr = new Uint8Array(attr.data)
-        break
-      case 5122:
-        typedArr = new Int16Array(attr.data)
-        break
-      case 5123:
-        typedArr = new Uint16Array(attr.data)
-        break
-      case 5125:
-        typedArr = new Uint16Array(attr.data)
-        break
-      case 5126:
-        typedArr = new Float32Array(attr.data)
-        break
-      default:
-        typedArr = new Float32Array(attr.data)
-    }
+    const typedArr = new WEBGL_COMPONENT_TYPES[attr.componentType](attr.data)
     gl.bufferData(attr.target, typedArr, gl.STATIC_DRAW)
     gl.bindBuffer(attr.target, null)
     attr.buffer = dataBuffer
@@ -202,32 +189,9 @@ export class Kala {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
       gl.bindTexture(gl.TEXTURE_2D, texture)
+      this.setTextureParam(image.width, image.height, sampler)
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
-
-      if (sampler) {
-        if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, sampler.wrapS)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, sampler.wrapT)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sampler.minFilter)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sampler.magFilter)
-        } else {
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        }
-      } else {
-        if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
-          gl.generateMipmap(gl.TEXTURE_2D)
-        } else {
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        }
-      }
     }
-    // document.body.append(image)
     image.src = url
     return texture
   }
@@ -238,22 +202,45 @@ export class Kala {
     gl.bindTexture(gl.TEXTURE_2D, texture)
     const w = width || 1
     const h = height || 1
+    this.setTextureParam(w, h, sampler)
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, buffer)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, sampler.wrapS)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, sampler.wrapT)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sampler.minFilter)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sampler.magFilter)
     return texture
   }
 
+  setTextureParam (width, height, sampler) {
+    const gl = this.gl
+    if (sampler) {
+      if (util.isPowerOf2(width) && util.isPowerOf2(height)) {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, sampler.wrapS)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, sampler.wrapT)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sampler.minFilter)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sampler.magFilter)
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+      }
+    } else {
+      if (util.isPowerOf2(width) && util.isPowerOf2(height)) {
+        gl.generateMipmap(gl.TEXTURE_2D)
+      } else {
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+      }
+    }
+  }
+
   renderObject (obj) {
-    if (obj.constructor === Group) {
-      obj.children.forEach(c => {
+    if (obj instanceof Group) {
+      for (let c of obj.children) {
         this.renderObject(c)
-      })
+      }
       return
     }
-    if (obj.constructor === Mesh) {
+    if (obj instanceof Mesh) {
       this.renderMesh(obj)
     }
   }
@@ -262,11 +249,11 @@ export class Kala {
     const gl = this.gl
     const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
     const normalBuffer = this.initBufferData(mesh.geometry.normals)
-    const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords, true)
+    const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
     const normalMatrix = mat4.create()
     mat4.invert(normalMatrix, mesh.geometry.Model)
     mat4.transpose(normalMatrix, normalMatrix)
-    {
+    if (vertexBuffer) {
       gl.bindBuffer(mesh.geometry.vertices.target, vertexBuffer)
       gl.vertexAttribPointer(
                 this.programInfo.attribLocations.vertexPosition,
@@ -304,10 +291,9 @@ export class Kala {
     }
     gl.uniformMatrix4fv(this.programInfo.uniformLocations.projection, false, this.scene)
     gl.uniformMatrix4fv(this.programInfo.uniformLocations.model, false, mesh.geometry.Model)
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.normalMatrix, false, normalMatrix)
     gl.uniformMatrix4fv(this.programInfo.uniformLocations.view, false, this.view)
 
-    let albedoMap = mesh.material.albedoMap
+    let albedoMap = mesh.material.albedoTexture
     // if (texture instanceof NormalTexture) {
     //   gl.uniform1i(this.programInfo.uniformLocations.normalTextureIndex, index)
     // }
@@ -318,8 +304,10 @@ export class Kala {
       } else if (albedoMap.source) {
         if (albedoMap.source instanceof Uint8Array) {
           gltexture = this.loadTextureArrayBuffer(albedoMap.source, albedoMap.sampler)
-        } else {
+        } else if (typeof albedoMap.source === 'string') {
           gltexture = this.loadTextureURL(albedoMap.source || '', albedoMap.sampler)
+        } else {
+          gltexture = this.loadTextureURL('', albedoMap.sampler)
         }
         albedoMap.gltexture = gltexture
       }
@@ -333,10 +321,13 @@ export class Kala {
     if (mesh.geometry.indices) {
       const indexBuffer = this.initBufferData(mesh.geometry.indices)
       gl.bindBuffer(mesh.geometry.indices.target, indexBuffer)
-      gl.drawElements(gl.TRIANGLES, vertexCount, mesh.geometry.indices.componentType, mesh.geometry.indices.offset)
+      gl.drawElements(mesh.geometry.mode, vertexCount, mesh.geometry.indices.componentType, mesh.geometry.indices.offset)
     } else {
-      gl.drawArrays(gl.TRIANGLES, offset, vertexCount)
+      gl.drawArrays(mesh.geometry.mode, offset, vertexCount)
     }
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
   }
 
   fullScreen () {
@@ -384,7 +375,7 @@ export class Kala {
     }
     const gl = this.gl
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.clearColor(1.0, 1.0, 1.0, 1.0)
+    gl.clearColor(1.0, 1.0, 1.0, 0.6)
     gl.clearDepth(1.0)
     gl.enable(gl.DEPTH_TEST)
     gl.depthFunc(gl.LEQUAL)
@@ -393,8 +384,8 @@ export class Kala {
     this.view = this.camera.getViewMatrix()
 
     gl.useProgram(this.programInfo.program)
-    this.objects.forEach(obj => {
+    for (let obj of this.objects) {
       this.renderObject(obj)
-    })
+    }
   }
 }

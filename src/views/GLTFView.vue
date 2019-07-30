@@ -10,21 +10,17 @@ import axios from 'axios'
 import { vec3, mat4 } from 'gl-matrix'
 import { Kala } from './../../public/static/js/kala'
 import { GLTFLoader } from './../../public/static/js/gltfLoader'
-import Stats from 'stats.js'
 
 @Component
 export default class ObjectLoad extends Vue {
   glEle: any
   kala: Kala
   animate: any = null
-  stats: Stats = new Stats()
   getShaderSource (vsUrl: string, fsUrl: string) {
     return Promise.all([axios.get(vsUrl), axios.get(fsUrl)])
   }
   renderer () {
-    this.stats.begin()
     this.kala.render()
-    this.stats.end()
     this.animate = requestAnimationFrame(this.renderer)
   }
   addResizeEvent () {
@@ -46,8 +42,6 @@ export default class ObjectLoad extends Vue {
     }
   }
   async mounted () {
-    this.stats.showPanel(0)
-    document.body.appendChild(this.stats.dom)
     this.glEle = document.getElementById('glcanvas')
     const kala = this.kala = new Kala(this.glEle)
     let vsSource
@@ -60,12 +54,14 @@ export default class ObjectLoad extends Vue {
     kala.camera.Speed = 10
     this.renderer()
     this.addResizeEvent()
-    axios.get('/static/model/gun/Handgun_obj.gltf').then(res => {
-      console.log(res.data)
-      const loader = new GLTFLoader()
-      kala.add(loader.load(res.data))
+    const url = '/static/model/deir_el-sultan_jerusalem/scene.gltf'
+    // const url = '/static/model/gun/Handgun_obj.gltf'
+    const loader = new GLTFLoader()
+    loader.load(url).then(object => {
+      kala.add(object)
     })
-    console.log(kala.objects)
+    console.log(kala)
+    console.log(loader)
   }
 
 }

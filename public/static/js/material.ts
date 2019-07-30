@@ -1,10 +1,13 @@
-import { Texture, NormalTexture, PBRTexture } from './texture'
+import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTexture } from './texture'
 
 export class Material {
   public name: string
-  public albedoMap: Texture
-  public normalMap: Texture
+  public albedoTexture: AlbedoTexture
+  public normalTexture: NormalTexture
+  public occlusionTexture: OcclusionTexture
+  public emissiveTexture: EmissiveTexture
   public alphaMode: string
+  public transparent: boolean = false
   public doubleSided: boolean
   public alphaCutoff: number
   constructor (name?: string) {
@@ -14,11 +17,19 @@ export class Material {
     this.alphaCutoff = 0.5
   }
 
-  addAlbedoMap (texture: PBRTexture) {
-    this.albedoMap = texture
+  addAlbedoTexture (texture: AlbedoTexture) {
+    this.albedoTexture = texture
   }
 
-  addNormalMap (texture: NormalTexture) {
-    this.normalMap = texture
+  addNormalTexture (texture: NormalTexture) {
+    this.normalTexture = texture
+  }
+
+  addOcclusionTexture (texture: OcclusionTexture) {
+    this.occlusionTexture = texture
+  }
+
+  addEmissiveTexture (texture: EmissiveTexture) {
+    this.emissiveTexture = texture
   }
 }

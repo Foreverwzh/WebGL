@@ -8,13 +8,13 @@ export interface Sampler {
 
 export class Texture {
   public name: string
-  public source: any
-  public gltexture?: any
+  public source: ArrayBuffer | string
+  public gltexture?: WebGLTexture
   public sampler?: Sampler
 
   constructor (name?: string) {
     this.name = name || ''
-    this.source = null
+    this.source = ''
   }
 
   setSampler (opt: any) {
@@ -46,7 +46,7 @@ export class OcclusionTexture extends Texture {
   }
 }
 
-export class PBRTexture extends Texture {
+export class AlbedoTexture extends Texture {
   public baseColorFactor: number[]
   public metallicFactor: number
   public roughnessFactor: number

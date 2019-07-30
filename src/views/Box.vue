@@ -58,26 +58,7 @@ export default class Box extends Vue {
       -0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
       -0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0
     ]
-    const d1: number[] = []
-    const d2: number[] = []
-    const d3: number[] = []
-    data.forEach((i, index) => {
-      const a = index % 8
-      if (a >= 0 && a < 3) {
-        d1.push(i)
-      }
-      if (a >= 3 && a < 6) {
-        d2.push(i)
-      }
-      if (a >= 6 && a < 8) {
-        d3.push(i)
-      }
-    })
-    return {
-      vertexes: d1,
-      normals: d2,
-      textureCoords: d3
-    }
+    return new Float32Array(data).buffer
   }
   getShaderSource (vsUrl: string, fsUrl: string) {
     return Promise.all([axios.get(vsUrl), axios.get(fsUrl)])
@@ -118,10 +99,10 @@ export default class Box extends Vue {
     kala.camera.setPosition([0, 0, 10])
     kala.camera.Speed = 10
     const box = this.boxInfo()
-    const texture = new kala.PBRTexture()
+    const texture = new kala.AlbedoTexture()
     texture.source = '/static/image/container2.png'
     const material = new kala.Material()
-    material.addAlbedoMap(texture)
+    material.addAlbedoTexture(texture)
     const cubePositions = [
       vec3.fromValues(0.0, 0.0, 0.0),
       vec3.fromValues(2.0, 5.0, -15.0),
@@ -136,14 +117,20 @@ export default class Box extends Vue {
     ]
     for (let i of cubePositions) {
       const geometry = new kala.Geometry({
-        data: box.vertexes,
-        stride: 12
+        data: box,
+        stride: 32,
+        offset: 0,
+        count: 36
       }, {
-        data: box.normals,
-        stride: 12
+        data: box,
+        stride: 32,
+        offset: 12,
+        count: 36
       }, {
-        data: box.textureCoords,
-        stride: 8
+        data: box,
+        stride: 32,
+        offset: 24,
+        count: 36
       })
       const mesh = new kala.Mesh(geometry, material)
       kala.add(mesh)
@@ -151,6 +138,7 @@ export default class Box extends Vue {
     }
     this.renderer()
     this.addResizeEvent()
+    console.log(kala.objects)
   }
 
 }
