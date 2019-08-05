@@ -4,6 +4,7 @@ import Home from './views/Home.vue'
 import Box from './views/Box.vue'
 import ObjectLoad from './views/ObjectLoad.vue'
 import GLTFView from './views/GLTFView.vue'
+import GLTFViewThreejs from './views/GLTFViewThreejs.vue'
 
 Vue.use(Router)
 
@@ -30,6 +31,11 @@ export default new Router({
       path: '/gltfview',
       name: 'gltfview',
       component: GLTFView
+    },
+    {
+      path: '/gltfviewthreejs',
+      name: 'gltfviewthreejs',
+      component: GLTFViewThreejs
     },
     {
       path: '/about',

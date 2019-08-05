@@ -1,4 +1,4 @@
-import { mat4, vec3 } from 'gl-matrix'
+import { mat4, vec3, vec4 } from 'gl-matrix'
 /**
  *
  *
@@ -37,13 +37,12 @@ export class Geometry {
   public name: string = ''
   public vertices: VertexAttribute
   public normals: VertexAttribute
-  public textureCoords: VertexAttribute
-  public color: number[]
-  public Model: mat4
-  public position: vec3
+  public textureCoords: VertexAttribute | null
+  public tangent: VertexAttribute | null
+  public color: VertexAttribute | null
   public count: number
   public mode: number = 4
-  public indices?: IndicesAttribute
+  public indices: IndicesAttribute
 /**
  * Creates an instance of Geometry.
  * @param {*} vertices
@@ -52,34 +51,18 @@ export class Geometry {
  * @param {number[]} [indices]
  * @memberof Geometry
  */
-  constructor (vertices: any, normals: any, textureCoords: any, indices?: any) {
-    this.vertices = this._initVertexAttribute(vertices, 'Vertex')
-    this.normals = this._initVertexAttribute(normals, 'Normal')
-    this.textureCoords = this._initVertexAttribute(textureCoords, 'TextureCoord')
-    if (indices) this.indices = indices
+  constructor (vertices?: any, normals?: any, textureCoords?: any, tangent?: any, color?: any, indices?: any) {
+    this.vertices = vertices && this._initVertexAttribute(vertices, 'Vertex')
+    this.normals = normals && this._initVertexAttribute(normals, 'Normal')
+    this.textureCoords = textureCoords && this._initVertexAttribute(textureCoords, 'TextureCoord')
+    this.tangent = tangent && this._initVertexAttribute(tangent, 'TextureCoord')
+    this.color = color && this._initVertexAttribute(color, 'TextureCoord')
+    this.indices = indices && indices
     if (this.indices) {
       this.count = this.indices.count
     } else {
-      this.count = this.vertices.count
+      this.count = this.vertices && this.vertices.count
     }
-    this.color = [0, 0, 255, 255]
-    this.Model = mat4.create()
-    this.position = vec3.fromValues(0, 0, 0)
-  }
-
-  rotate (radius: number, vec: vec3) {
-    mat4.rotate(this.Model, this.Model, radius, vec)
-  }
-
-  translate (vec: vec3) {
-    mat4.translate(this.Model, this.Model, vec)
-    vec3.add(this.position, this.position, vec)
-  }
-
-  setPosition (vec: vec3) {
-    this.position = vec
-    const temp = vec3.create()
-
   }
 
   private _initVertexAttribute (obj: any, name?: string): VertexAttribute {

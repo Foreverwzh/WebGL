@@ -100,7 +100,7 @@ export default class Box extends Vue {
     kala.camera.Speed = 10
     const box = this.boxInfo()
     const texture = new kala.AlbedoTexture()
-    texture.source = '/static/image/container2.png'
+    texture.url = '/static/image/container2.png'
     const material = new kala.Material()
     material.addAlbedoTexture(texture)
     const cubePositions = [
@@ -134,7 +134,7 @@ export default class Box extends Vue {
       })
       const mesh = new kala.Mesh(geometry, material)
       kala.add(mesh)
-      geometry.translate(i)
+      mesh.translate(i)
     }
     this.renderer()
     this.addResizeEvent()

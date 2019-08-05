@@ -1,7 +1,7 @@
 import { Mesh } from './mesh'
 import { VertexAttribute, Geometry } from './geometry'
 import { Material } from './material'
-import { Group } from './group'
+import { Group, Scene } from './group'
 import { Texture, NormalTexture, EmissiveTexture, OcclusionTexture, AlbedoTexture } from './texture'
 import { arrayBufferToImageURL } from './glTool'
 import axios from 'axios'
@@ -93,13 +93,14 @@ export class GLTFLoader {
     this.bufferData = {}
     const gltf = this.gltf
     await this.loadAllBuffer()
-    const meshs = new Group()
+    const meshs = new Scene()
     gltf.nodes.forEach(node => {
       const meshIndex = node.mesh
       if (typeof meshIndex === 'number') {
         const mesh = this.createMesh(gltf.meshes[meshIndex])
         mesh.parent = mesh
         meshs.add(mesh)
+        meshs.rotation = node.rotation || [0, 0, 0, 0]
       }
     })
     return meshs
@@ -118,11 +119,17 @@ export class GLTFLoader {
         })
         const buf = res.data
         if (typeof buf === 'string') {
-          const array_buffer = new Uint8Array(buf.length)
-          for (let i = 0; i < buf.length; i ++) {
-            array_buffer[ i ] = buf.charCodeAt(i) & 0xff
+          const buffer = new ArrayBuffer(buf.length)
+          let view = new Uint8Array(buffer)
+          for (let i = 0; i < buf.length; i++) {
+            view[i] = buf.charCodeAt(i)
           }
-          data = array_buffer.buffer
+          // const array_buffer = new Uint8Array(buf.length)
+          // for (let i = 0; i < buf.length; i ++) {
+          //   array_buffer[ i ] = buf.charCodeAt(i) & 0xff
+          // }
+          // data = array_buffer.buffer
+          data = buffer
         } else {
           data = buf
         }
@@ -150,14 +157,16 @@ export class GLTFLoader {
     const vertices = this.dataAttribute(attrs.POSITION)
     const nomals = this.dataAttribute(attrs.NORMAL)
     const coords = this.dataAttribute(attrs.TEXCOORD_0)
+    const tangent = this.dataAttribute(attrs.TANGENT)
+    const color = this.dataAttribute(attrs.COLOR_0)
     const indices = this.getIndices(primitive.indices)
-    const geometry = new Geometry(vertices, nomals, coords, indices)
-    geometry.mode = primitive.mode
+    const geometry = new Geometry(vertices, nomals, coords, tangent, color, indices)
+    geometry.mode = primitive.mode || 4
     return geometry
   }
 
   dataAttribute (accessorIndex: number | undefined) {
-    if (typeof accessorIndex !== 'number') return {}
+    if (typeof accessorIndex !== 'number') return null
     const accessor = this.gltf.accessors[accessorIndex]
     const bufferView = this.gltf.bufferViews[accessor.bufferView]
     const bufferIndex = bufferView.buffer
@@ -299,14 +308,14 @@ export class GLTFLoader {
     if (typeof texInfo.source !== 'number') return texture
     const source = this.gltf.images[texInfo.source]
     if (source.uri) {
-      texture.source = Path.resolve(this.sourceURL, `./../${source.uri}`)
+      texture.url = Path.resolve(this.sourceURL, `./../${source.uri}`)
     } else {
       const bufferView = this.gltf.bufferViews[source.bufferView]
       const bufferIndex = bufferView.buffer
       const data = this.getBufferData(bufferIndex)
       const imgData: ArrayBuffer = data.slice(bufferView.byteOffset || 0, (bufferView.byteOffset || 0) + (bufferView.byteLength || 0))
       const imageUrl = arrayBufferToImageURL(imgData, source.mimeType)
-      texture.source = imageUrl
+      texture.url = imageUrl
     }
     if (typeof texInfo.sampler !== 'number') return texture
     const sampler = this.gltf.samplers[texInfo.sampler]

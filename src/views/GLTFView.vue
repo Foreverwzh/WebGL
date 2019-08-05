@@ -54,8 +54,9 @@ export default class ObjectLoad extends Vue {
     kala.camera.Speed = 10
     this.renderer()
     this.addResizeEvent()
-    const url = '/static/model/deir_el-sultan_jerusalem/scene.gltf'
-    // const url = '/static/model/gun/Handgun_obj.gltf'
+    const url = '/static/model/DamagedHelmet/DamagedHelmet.gltf'
+    // const url = '/static/model/deir_el-sultan_jerusalem/scene.gltf'
+    // const url = '/static/model/pers_win_01/scene.gltf'
     const loader = new GLTFLoader()
     loader.load(url).then(object => {
       kala.add(object)

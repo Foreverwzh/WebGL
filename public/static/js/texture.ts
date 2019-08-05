@@ -8,16 +8,27 @@ export interface Sampler {
 
 export class Texture {
   public name: string
-  public source: ArrayBuffer | string
+  public url: string | null = null
   public gltexture?: WebGLTexture
-  public sampler?: Sampler
+  public sampler: Sampler
+  public flipY: boolean = true
+  public premultiplyAlpha: boolean = true
+  public unpackAlignment: boolean = true
+  public width: number = 1
+  public height: number = 1
+  public isPowerOf2: boolean = true
 
   constructor (name?: string) {
     this.name = name || ''
-    this.source = ''
+    this.sampler = {
+      magFilter: 9729,
+      minFilter: 9729,
+      wrapS: 10497,
+      wrapT: 10497
+    }
   }
 
-  setSampler (opt: any) {
+  setSampler (opt: Sampler) {
     this.sampler = {
       magFilter: opt.magFilter || 9729,
       minFilter: opt.minFilter || 9729,

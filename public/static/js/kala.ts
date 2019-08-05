@@ -5,7 +5,7 @@ import { Mesh } from './mesh'
 import { Geometry, VertexAttribute, IndicesAttribute } from './geometry'
 import { Material } from './material'
 import { Group } from './group'
-import { Sampler, Texture, NormalTexture, AlbedoTexture } from './texture'
+import { Texture, NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture } from './texture'
 
 const WEBGL_COMPONENT_TYPES = {
   5120: Int8Array,
@@ -20,6 +20,8 @@ interface AttribLocations {
   vertexPosition: number
   vertexNormal: number
   textureCoord: number
+  tangent: number
+  color: number
 }
 
 interface UniformLocations {
@@ -27,6 +29,7 @@ interface UniformLocations {
   model: WebGLUniformLocation
   view: WebGLUniformLocation
   albedoMap: WebGLUniformLocation
+  normalMap: WebGLUniformLocation
 }
 
 interface ProgramInfo {
@@ -47,7 +50,7 @@ export class Kala {
   public gl: WebGLRenderingContext
   public camera: Camera
   public objects: any[] = []
-  public scene: mat4
+  public projectMatrix: mat4
   public view: any
   public lastRenderTime: Date | null = null
   public deltaTime: number = 0
@@ -60,25 +63,25 @@ export class Kala {
     this.gl = canvas.getContext('webgl')
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
-    this.scene = this.initScene()
+    this.projectMatrix = this.initProjectMatrix()
     this.camera = new Camera(this)
     this.view = this.camera.getViewMatrix()
     this.fullScreen()
   }
 
-  public initScene (): mat4 {
+  public initProjectMatrix (): mat4 {
     const gl = this.gl
     const fieldOfView = 45 * Math.PI / 180
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
     const zNear = 0.1
     const zFar = 100.0
-    const scene = mat4.create()
-    mat4.perspective(scene,
+    const projectMatrix = mat4.create()
+    mat4.perspective(projectMatrix,
             fieldOfView,
             aspect,
             zNear,
             zFar)
-    return scene
+    return projectMatrix
   }
 
   loadShader (type: number, source: string, name: string) {
@@ -134,13 +137,16 @@ export class Kala {
       attribLocations: {
         vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
         vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
-        textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord')
+        textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+        tangent: gl.getAttribLocation(shaderProgram, 'aTangent'),
+        color: gl.getAttribLocation(shaderProgram, 'aColor')
       },
       uniformLocations: {
         projection: gl.getUniformLocation(shaderProgram, 'uProjection'),
         model: gl.getUniformLocation(shaderProgram, 'uModel'),
         view: gl.getUniformLocation(shaderProgram, 'uView'),
-        albedoMap: gl.getUniformLocation(shaderProgram, 'albedoMap')
+        albedoMap: gl.getUniformLocation(shaderProgram, 'albedoMap'),
+        normalMap: gl.getUniformLocation(shaderProgram, 'normalMap')
       }
     }
     return shaderProgram
@@ -155,12 +161,17 @@ export class Kala {
   }
 
   initBufferData (attr: VertexAttribute | IndicesAttribute) {
+    if (!attr) return null
     if (attr.buffer) {
       return attr.buffer
     }
     const gl = this.gl
     const dataBuffer = gl.createBuffer()
     gl.bindBuffer(attr.target, dataBuffer)
+    if (!WEBGL_COMPONENT_TYPES[attr.componentType]) {
+      console.error(`No such componentType: ${attr.componentType}`)
+      return false
+    }
     const typedArr = new WEBGL_COMPONENT_TYPES[attr.componentType](attr.data)
     gl.bufferData(attr.target, typedArr, gl.STATIC_DRAW)
     gl.bindBuffer(attr.target, null)
@@ -168,91 +179,97 @@ export class Kala {
     return dataBuffer
   }
 
-  loadTextureURL (url: string, sampler?: Sampler) {
+  loadTextureURL (texture: NormalTexture | AlbedoTexture | EmissiveTexture | OcclusionTexture) {
     const gl = this.gl
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+    const gltexture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, gltexture)
     const level = 0
-    const internalFormat = gl.RGBA
+    const internalFormat = texture instanceof AlbedoTexture ? gl.RGBA : gl.RGB
     const width = 1
     const height = 1
     const border = 0
-    const srcFormat = gl.RGBA
+    const srcFormat = internalFormat
     const srcType = gl.UNSIGNED_BYTE
     const pixel = new Uint8Array([0, 0, 255, 255])
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                       width, height, border, srcFormat, srcType,
                       pixel)
-    if (!url) return texture
+    texture.gltexture = gltexture
+    texture.width = width,
+    texture.height = height,
+    texture.isPowerOf2 = false
+    if (texture.url === null) return
     const image = new Image()
     image.onload = () => {
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
-      gl.bindTexture(gl.TEXTURE_2D, texture)
-      this.setTextureParam(image.width, image.height, sampler)
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha)
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, texture.unpackAlignment)
+      gl.bindTexture(gl.TEXTURE_2D, gltexture)
+      texture.width = image.width
+      texture.height = image.height
+      if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
+        texture.isPowerOf2 = true
+      }
+      // this.setTextureParam(sampler, imgInfo.isPowerOf2)
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
     }
-    image.src = url
-    return texture
+    image.src = texture.url
   }
 
-  loadTextureArrayBuffer (buffer: Uint8Array, sampler?: Sampler, width?: number, height?: number) {
+  setTextureParam (textureType: number, texture: NormalTexture | AlbedoTexture | EmissiveTexture | OcclusionTexture, supportsMips: boolean) {
     const gl = this.gl
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-    const w = width || 1
-    const h = height || 1
-    this.setTextureParam(w, h, sampler)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, buffer)
-    return texture
-  }
+    if (supportsMips) {
 
-  setTextureParam (width, height, sampler) {
-    const gl = this.gl
-    if (sampler) {
-      if (util.isPowerOf2(width) && util.isPowerOf2(height)) {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, sampler.wrapS)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, sampler.wrapT)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, sampler.minFilter)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, sampler.magFilter)
-      } else {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-      }
+      gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, texture.sampler.wrapS)
+      gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, texture.sampler.wrapT)
+
+      gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, texture.sampler.magFilter)
+      gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, texture.sampler.minFilter)
+
     } else {
-      if (util.isPowerOf2(width) && util.isPowerOf2(height)) {
-        gl.generateMipmap(gl.TEXTURE_2D)
-      } else {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-      }
+
+      gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+      gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+      gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, texture.sampler.magFilter)
+      gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, texture.sampler.minFilter)
+
     }
   }
 
-  renderObject (obj) {
+  renderObject (obj, matrix: mat4) {
+    if (obj.translation) {
+      mat4.translate(matrix, matrix, obj.translation)
+    }
+    if (obj.rotation) {
+      mat4.rotate(matrix, matrix, obj.rotation[3], obj.rotation.slice(0, 3))
+    }
+    if (obj.scale) {
+      mat4.scale(matrix, matrix, obj.scale)
+    }
     if (obj instanceof Group) {
       for (let c of obj.children) {
-        this.renderObject(c)
+        this.renderObject(c, matrix)
       }
       return
     }
     if (obj instanceof Mesh) {
-      this.renderMesh(obj)
+      this.renderMesh(obj, matrix)
     }
   }
 
-  renderMesh (mesh: Mesh) {
+  renderMesh (mesh: Mesh, matrix: mat4) {
     const gl = this.gl
     const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
     const normalBuffer = this.initBufferData(mesh.geometry.normals)
     const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
-    const normalMatrix = mat4.create()
-    mat4.invert(normalMatrix, mesh.geometry.Model)
-    mat4.transpose(normalMatrix, normalMatrix)
+    const tangentBuffer = this.initBufferData(mesh.geometry.tangent)
+    const colorBuffer = this.initBufferData(mesh.geometry.color)
+    if (mesh.matrixWorldNeedsUpdate) {
+      mesh.matrixWorld = matrix
+      mesh.updateMatrixWorld()
+      mesh.matrixWorldNeedsUpdate = false
+    }
     if (vertexBuffer) {
       gl.bindBuffer(mesh.geometry.vertices.target, vertexBuffer)
       gl.vertexAttribPointer(
@@ -265,18 +282,18 @@ export class Kala {
       gl.enableVertexAttribArray(
                 this.programInfo.attribLocations.vertexPosition)
     }
-    // if (normalBuffer) {
-    //   gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
-    //   gl.vertexAttribPointer(
-    //             this.programInfo.attribLocations.vertexNormal,
-    //             mesh.geometry.normals.size,
-    //             mesh.geometry.normals.componentType,
-    //             mesh.geometry.normals.normalized,
-    //             mesh.geometry.normals.stride,
-    //             mesh.geometry.normals.offset)
-    //   gl.enableVertexAttribArray(
-    //             this.programInfo.attribLocations.vertexNormal)
-    // }
+    if (normalBuffer) {
+      gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
+      gl.vertexAttribPointer(
+                this.programInfo.attribLocations.vertexNormal,
+                mesh.geometry.normals.size,
+                mesh.geometry.normals.componentType,
+                mesh.geometry.normals.normalized,
+                mesh.geometry.normals.stride,
+                mesh.geometry.normals.offset)
+      gl.enableVertexAttribArray(
+                this.programInfo.attribLocations.vertexNormal)
+    }
     if (texcoordBuffer) {
       gl.bindBuffer(mesh.geometry.textureCoords.target, texcoordBuffer)
       gl.vertexAttribPointer(
@@ -289,30 +306,62 @@ export class Kala {
       gl.enableVertexAttribArray(
                 this.programInfo.attribLocations.textureCoord)
     }
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.projection, false, this.scene)
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.model, false, mesh.geometry.Model)
+    if (tangentBuffer) {
+      gl.bindBuffer(mesh.geometry.tangent.target, tangentBuffer)
+      gl.vertexAttribPointer(
+                this.programInfo.attribLocations.tangent,
+                mesh.geometry.tangent.size,
+                mesh.geometry.tangent.componentType,
+                mesh.geometry.tangent.normalized,
+                mesh.geometry.tangent.stride,
+                mesh.geometry.tangent.offset)
+      gl.enableVertexAttribArray(
+                this.programInfo.attribLocations.tangent)
+    }
+    if (colorBuffer) {
+      gl.bindBuffer(mesh.geometry.color.target, colorBuffer)
+      gl.vertexAttribPointer(
+                this.programInfo.attribLocations.color,
+                mesh.geometry.color.size,
+                mesh.geometry.color.componentType,
+                mesh.geometry.color.normalized,
+                mesh.geometry.color.stride,
+                mesh.geometry.color.offset)
+      gl.enableVertexAttribArray(
+                this.programInfo.attribLocations.color)
+    }
+    gl.uniformMatrix4fv(this.programInfo.uniformLocations.projection, false, this.projectMatrix)
+    gl.uniformMatrix4fv(this.programInfo.uniformLocations.model, false, mesh.modelMatrix)
     gl.uniformMatrix4fv(this.programInfo.uniformLocations.view, false, this.view)
 
-    let albedoMap = mesh.material.albedoTexture
-    // if (texture instanceof NormalTexture) {
-    //   gl.uniform1i(this.programInfo.uniformLocations.normalTextureIndex, index)
+    // const normalTexture = mesh.material.normalTexture
+    // if (normalTexture) {
+    //   let gltexture
+    //   if (normalTexture.gltexture) {
+    //     gltexture = normalTexture.gltexture
+    //   } else {
+    //     this.loadTextureURL(normalTexture)
+    //     gltexture = normalTexture.gltexture
+    //   }
+    //   gl.activeTexture(gl.TEXTURE0)
+    //   gl.bindTexture(gl.TEXTURE_2D, gltexture)
+    //   const supportsMips = normalTexture.isPowerOf2
+    //   this.setTextureParam(gl.TEXTURE_2D, normalTexture, supportsMips)
+    //   gl.uniform1i(this.programInfo.uniformLocations.normalMap, 0)
     // }
-    if (albedoMap) {
+    const albedoTexture = mesh.material.albedoTexture
+    if (albedoTexture) {
       let gltexture
-      if (albedoMap.gltexture) {
-        gltexture = albedoMap.gltexture
-      } else if (albedoMap.source) {
-        if (albedoMap.source instanceof Uint8Array) {
-          gltexture = this.loadTextureArrayBuffer(albedoMap.source, albedoMap.sampler)
-        } else if (typeof albedoMap.source === 'string') {
-          gltexture = this.loadTextureURL(albedoMap.source || '', albedoMap.sampler)
-        } else {
-          gltexture = this.loadTextureURL('', albedoMap.sampler)
-        }
-        albedoMap.gltexture = gltexture
+      if (albedoTexture.gltexture) {
+        gltexture = albedoTexture.gltexture
+      } else {
+        this.loadTextureURL(albedoTexture)
+        gltexture = albedoTexture.gltexture
       }
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, gltexture)
+      const supportsMips = albedoTexture.isPowerOf2
+      this.setTextureParam(gl.TEXTURE_2D, albedoTexture, supportsMips)
       gl.uniform1i(this.programInfo.uniformLocations.albedoMap, 0)
     }
 
@@ -321,13 +370,11 @@ export class Kala {
     if (mesh.geometry.indices) {
       const indexBuffer = this.initBufferData(mesh.geometry.indices)
       gl.bindBuffer(mesh.geometry.indices.target, indexBuffer)
+      // gl.getExtension('OES_element_index_uint')
       gl.drawElements(mesh.geometry.mode, vertexCount, mesh.geometry.indices.componentType, mesh.geometry.indices.offset)
     } else {
       gl.drawArrays(mesh.geometry.mode, offset, vertexCount)
     }
-    gl.bindTexture(gl.TEXTURE_2D, null)
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
   }
 
   fullScreen () {
@@ -375,17 +422,18 @@ export class Kala {
     }
     const gl = this.gl
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.clearColor(1.0, 1.0, 1.0, 0.6)
+    gl.clearColor(0.2, 0.4, 0.6, 0.6)
     gl.clearDepth(1.0)
     gl.enable(gl.DEPTH_TEST)
     gl.depthFunc(gl.LEQUAL)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    this.scene = this.initScene()
+    this.projectMatrix = this.initProjectMatrix()
     this.view = this.camera.getViewMatrix()
 
     gl.useProgram(this.programInfo.program)
     for (let obj of this.objects) {
-      this.renderObject(obj)
+      const matrix = mat4.create()
+      this.renderObject(obj, matrix)
     }
   }
 }
