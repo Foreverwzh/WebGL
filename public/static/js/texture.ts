@@ -57,15 +57,21 @@ export class OcclusionTexture extends Texture {
   }
 }
 
-export class AlbedoTexture extends Texture {
-  public baseColorFactor: number[]
+export class MetalRoughnessTexture extends Texture {
   public metallicFactor: number
   public roughnessFactor: number
 
   constructor (name?: string) {
     super(name || '')
-    this.baseColorFactor = [1, 1, 1, 1]
     this.metallicFactor = 1
     this.roughnessFactor = 1
+  }
+}
+
+export class AlbedoTexture extends Texture {
+  public baseColorFactor: number[]
+  constructor (name?: string) {
+    super(name || '')
+    this.baseColorFactor = [1, 1, 1, 1]
   }
 }

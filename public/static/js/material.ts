@@ -1,4 +1,4 @@
-import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTexture } from './texture'
+import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTexture, MetalRoughnessTexture } from './Texture'
 
 export class Material {
   public name: string
@@ -6,6 +6,7 @@ export class Material {
   public normalTexture: NormalTexture
   public occlusionTexture: OcclusionTexture
   public emissiveTexture: EmissiveTexture
+  public metalRoughnessTexture: MetalRoughnessTexture
   public alphaMode: string
   public transparent: boolean = false
   public doubleSided: boolean
@@ -31,5 +32,9 @@ export class Material {
 
   addEmissiveTexture (texture: EmissiveTexture) {
     this.emissiveTexture = texture
+  }
+
+  addMetalRoughnessTexture (texture: MetalRoughnessTexture) {
+    this.metalRoughnessTexture = texture
   }
 }

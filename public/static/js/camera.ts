@@ -1,6 +1,6 @@
 import { vec3, mat4 } from 'gl-matrix'
 import { create, all } from 'mathjs'
-import { Kala } from './kala'
+import { Kala } from './Kala'
 
 declare module 'mathjs' {
   interface MathJsStatic {

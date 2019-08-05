@@ -1,9 +1,10 @@
-import { Mesh } from './mesh'
-import { VertexAttribute, Geometry } from './geometry'
-import { Material } from './material'
-import { Group, Scene } from './group'
-import { Texture, NormalTexture, EmissiveTexture, OcclusionTexture, AlbedoTexture } from './texture'
-import { arrayBufferToImageURL } from './glTool'
+import { Mesh } from './Mesh'
+import { Geometry } from './Geometry'
+import { Material } from './Material'
+import { Object3D } from './Object3d'
+import { Scene } from './Scene'
+import { NormalTexture, EmissiveTexture, OcclusionTexture, AlbedoTexture, MetalRoughnessTexture } from './Texture'
+import { arrayBufferToImageURL } from './GLTool'
 import axios from 'axios'
 import * as Path from 'path'
 
@@ -118,30 +119,16 @@ export class GLTFLoader {
           responseType: 'arraybuffer'
         })
         const buf = res.data
-        if (typeof buf === 'string') {
-          const buffer = new ArrayBuffer(buf.length)
-          let view = new Uint8Array(buffer)
-          for (let i = 0; i < buf.length; i++) {
-            view[i] = buf.charCodeAt(i)
-          }
-          // const array_buffer = new Uint8Array(buf.length)
-          // for (let i = 0; i < buf.length; i ++) {
-          //   array_buffer[ i ] = buf.charCodeAt(i) & 0xff
-          // }
-          // data = array_buffer.buffer
-          data = buffer
-        } else {
-          data = buf
-        }
+        data = buf
       } else {
-        data = this.decodeDataUri(buffer.uri, 'arraybuffer')
+        data = this.decodeDataUri(buffer.uri)
       }
       this.bufferData[i] = data
     }
   }
 
-  createMesh (info: any): Group {
-    const mesh = new Group(info.name)
+  createMesh (info: any): Object3D {
+    const mesh = new Object3D(info.name)
     info.primitives.forEach((primitive: any) => {
       const geometry = this.createGeometry(primitive)
       const material = this.createMaterial(primitive)
@@ -206,32 +193,12 @@ export class GLTFLoader {
     return buffer
   }
 
-  decodeDataUri (uri: string, responseType: string) {
+  decodeDataUri (uri: string) {
     const dataUriRegex = /^data:(.*?)\;(base64)?,(.*)$/
     const dataUriRegexResult = dataUriRegex.exec(uri)
-    const mimeType = dataUriRegexResult[1]
     const isBase64 = !!dataUriRegexResult[2]
     const data = dataUriRegexResult[3]
-
-    switch (responseType) {
-      case '':
-      case 'text':
-        return this.decodeDataUriText(isBase64, data)
-      case 'arraybuffer':
-        return this.decodeDataUriArrayBuffer(isBase64, data)
-      case 'blob':
-        let buffer = this.decodeDataUriArrayBuffer(isBase64, data)
-        return new Blob([buffer], {
-          type : mimeType
-        })
-      // case 'document':
-      //   let parser = new DOMParser()
-      //   return parser.parseFromString(this.decodeDataUriText(isBase64, data), mimeType)
-      // case 'json':
-      //   return JSON.parse(this.decodeDataUriText(isBase64, data))
-      default:
-        throw new Error('Unhandled responseType: ' + responseType)
-    }
+    return this.decodeDataUriText(isBase64, data)
   }
 
   createMaterial (primitive: any): Material {
@@ -250,11 +217,11 @@ export class GLTFLoader {
       }
     }
     if (materialInfo.normalTexture && typeof materialInfo.normalTexture.index === 'number') {
-      const texture = this.createTexture(this.gltf.textures[materialInfo.normalTexture.index], 'normal')
+      const texture: NormalTexture = this.createTexture(this.gltf.textures[materialInfo.normalTexture.index], 'normal')
       material.addNormalTexture(texture)
     }
     if (materialInfo.emissiveTexture && typeof materialInfo.emissiveTexture.index === 'number') {
-      const texture = this.createTexture(this.gltf.textures[materialInfo.emissiveTexture.index], 'emissive')
+      const texture: EmissiveTexture = this.createTexture(this.gltf.textures[materialInfo.emissiveTexture.index], 'emissive')
       material.addEmissiveTexture(texture)
     }
     if (materialInfo.occlusionTexture && typeof materialInfo.occlusionTexture.index === 'number') {
@@ -262,11 +229,15 @@ export class GLTFLoader {
       material.addOcclusionTexture(texture)
     }
     if (materialInfo.pbrMetallicRoughness && materialInfo.pbrMetallicRoughness.baseColorTexture) {
-      const texture: AlbedoTexture = this.createTexture(this.gltf.textures[materialInfo.pbrMetallicRoughness.baseColorTexture.index], 'pbr')
+      const texture: AlbedoTexture = this.createTexture(this.gltf.textures[materialInfo.pbrMetallicRoughness.baseColorTexture.index], 'albedo')
       texture.baseColorFactor = materialInfo.pbrMetallicRoughness.baseColorFactor || [1, 1, 1, 1]
+      material.addAlbedoTexture(texture)
+    }
+    if (materialInfo.pbrMetallicRoughness && materialInfo.pbrMetallicRoughness.metallicRoughnessTexture) {
+      const texture: MetalRoughnessTexture = this.createTexture(this.gltf.textures[materialInfo.pbrMetallicRoughness.metallicRoughnessTexture.index], 'metalroughness')
       texture.roughnessFactor = materialInfo.pbrMetallicRoughness.roughnessFactor || 1
       texture.metallicFactor = materialInfo.metallicFactor || 1
-      material.addAlbedoTexture(texture)
+      material.addMetalRoughnessTexture(texture)
     }
     return material
   }
@@ -301,8 +272,11 @@ export class GLTFLoader {
       case 'occlusion':
         texture = new OcclusionTexture(texInfo.name)
         break
-      case 'pbr':
+      case 'albedo':
         texture = new AlbedoTexture(texInfo.name)
+        break
+      case 'metalroughness':
+        texture = new MetalRoughnessTexture(texInfo.name)
         break
     }
     if (typeof texInfo.source !== 'number') return texture

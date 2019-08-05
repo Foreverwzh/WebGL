@@ -1,11 +1,11 @@
-import { Camera } from './camera'
-import * as util from './glTool'
+import { Camera } from './Camera'
+import * as util from './GLTool'
 import { mat4 } from 'gl-matrix'
-import { Mesh } from './mesh'
-import { Geometry, VertexAttribute, IndicesAttribute } from './geometry'
-import { Material } from './material'
-import { Group } from './group'
-import { Texture, NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture } from './texture'
+import { Mesh } from './Mesh'
+import { Geometry, VertexAttribute, IndicesAttribute } from './Geometry'
+import { Material } from './Material'
+import { Object3D } from './Object3d'
+import { NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture } from './Texture'
 
 const WEBGL_COMPONENT_TYPES = {
   5120: Int8Array,
@@ -42,9 +42,11 @@ export class Kala {
   public Mesh = Mesh
   public Geometry = Geometry
   public Material = Material
-  public Texture = Texture
+  public MetalRoughnessTexture = MetalRoughnessTexture
   public NormalTexture = NormalTexture
   public AlbedoTexture = AlbedoTexture
+  public EmissiveTexture = EmissiveTexture
+  public OcclusionTexture = OcclusionTexture
   public util = util
 
   public gl: WebGLRenderingContext
@@ -247,14 +249,14 @@ export class Kala {
     if (obj.scale) {
       mat4.scale(matrix, matrix, obj.scale)
     }
-    if (obj instanceof Group) {
+    if (obj instanceof Object3D) {
       for (let c of obj.children) {
         this.renderObject(c, matrix)
       }
+      if (obj instanceof Mesh) {
+        this.renderMesh(obj, matrix)
+      }
       return
-    }
-    if (obj instanceof Mesh) {
-      this.renderMesh(obj, matrix)
     }
   }
 
