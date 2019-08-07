@@ -5,6 +5,7 @@ import { Mesh } from './Mesh'
 import { Geometry, VertexAttribute, IndicesAttribute } from './Geometry'
 import { Material } from './Material'
 import { Object3D } from './Object3d'
+import { Program, hasCached } from './Program'
 import { NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture } from './Texture'
 
 const WEBGL_COMPONENT_TYPES = {
@@ -57,6 +58,7 @@ export class Kala {
   public lastRenderTime: Date | null = null
   public deltaTime: number = 0
   public pointerLock: boolean = false
+  public programs: Program[] = []
   public programInfo: ProgramInfo
   public shaders: any = {}
   public MAX_TEXTURE: number = 16
@@ -262,6 +264,18 @@ export class Kala {
 
   renderMesh (mesh: Mesh, matrix: mat4) {
     const gl = this.gl
+    if (mesh.program) {
+      gl.useProgram(mesh.program.program)
+    } else {
+      const cache_p = hasCached(mesh.material, this.programs)
+      if (cache_p) {
+        mesh.program = cache_p
+        cache_p.usedNum ++
+      } else {
+        mesh.program = new Program(gl, mesh)
+        this.programs.push(mesh.program)
+      }
+    }
     const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
     const normalBuffer = this.initBufferData(mesh.geometry.normals)
     const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
@@ -432,7 +446,7 @@ export class Kala {
     this.projectMatrix = this.initProjectMatrix()
     this.view = this.camera.getViewMatrix()
 
-    gl.useProgram(this.programInfo.program)
+    // gl.useProgram(this.programInfo.program)
     for (let obj of this.objects) {
       const matrix = mat4.create()
       this.renderObject(obj, matrix)

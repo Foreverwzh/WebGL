@@ -1,4 +1,5 @@
 import { mat4, vec3, vec4, quat } from 'gl-matrix'
+import { Program } from './Program'
 export class Object3D {
   public children: any[]
   public parent: Object3D | null
@@ -10,6 +11,7 @@ export class Object3D {
   public matrix: mat4
   public matrixWorld: mat4
   public matrixWorldNeedsUpdate: boolean
+  public program: Program
   constructor (name?: string) {
     this.name = name || ''
     this.children = []

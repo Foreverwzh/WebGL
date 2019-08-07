@@ -2,6 +2,7 @@ import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTextur
 
 export class Material {
   public name: string
+  public type: string = 'standard'
   public albedoTexture: AlbedoTexture
   public normalTexture: NormalTexture
   public occlusionTexture: OcclusionTexture

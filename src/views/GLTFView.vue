@@ -8,8 +8,8 @@
 import { Component, Vue, Emit } from 'vue-property-decorator'
 import axios from 'axios'
 import { vec3, mat4 } from 'gl-matrix'
-import { Kala } from './../../public/static/js/kala'
-import { GLTFLoader } from './../../public/static/js/gltfLoader'
+import { Kala } from './../../public/static/js/Kala'
+import { GLTFLoader } from './../../public/static/js/GLTFLoader'
 
 @Component
 export default class ObjectLoad extends Vue {
@@ -49,7 +49,7 @@ export default class ObjectLoad extends Vue {
     const sourceRes = await this.getShaderSource('/static/source/box/vs.glsl', '/static/source/box/fs.glsl');
     [vsSource, fsSource ] = [sourceRes[0].data, sourceRes[1].data]
 
-    kala.initShaderProgram(vsSource, fsSource)
+    // kala.initShaderProgram(vsSource, fsSource)
     kala.camera.setPosition([0, 0, 10])
     kala.camera.Speed = 10
     this.renderer()
