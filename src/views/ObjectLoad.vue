@@ -8,7 +8,7 @@
 import { Component, Vue, Emit } from 'vue-property-decorator'
 import axios from 'axios'
 import { vec3, mat4 } from 'gl-matrix'
-import { Kala } from './../../public/static/js/kala'
+import { Kala } from './../../public/static/js/Kala'
 import { OBJLoader } from './../../public/static/js/OBJLoader'
 
 @Component

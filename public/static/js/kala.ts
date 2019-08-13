@@ -5,8 +5,10 @@ import { Mesh } from './Mesh'
 import { Geometry, VertexAttribute, IndicesAttribute } from './Geometry'
 import { Material } from './Material'
 import { Object3D } from './Object3d'
-import { Program, hasCached } from './Program'
+import { Program, hasCached } from './webgl/Program'
 import { NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture } from './Texture'
+import { Attributes } from './webgl/Attributes'
+import { Uniforms } from './webgl/Uniforms'
 
 const WEBGL_COMPONENT_TYPES = {
   5120: Int8Array,
@@ -264,9 +266,7 @@ export class Kala {
 
   renderMesh (mesh: Mesh, matrix: mat4) {
     const gl = this.gl
-    if (mesh.program) {
-      gl.useProgram(mesh.program.program)
-    } else {
+    if (!mesh.program) {
       const cache_p = hasCached(mesh.material, this.programs)
       if (cache_p) {
         mesh.program = cache_p
@@ -276,6 +276,11 @@ export class Kala {
         this.programs.push(mesh.program)
       }
     }
+    const program = mesh.program.program
+    gl.useProgram(program)
+    const attributes = new Attributes(gl, program)
+    const uniforms = new Uniforms(gl, program)
+    return
     const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
     const normalBuffer = this.initBufferData(mesh.geometry.normals)
     const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)

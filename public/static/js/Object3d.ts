@@ -1,5 +1,5 @@
 import { mat4, vec3, vec4, quat } from 'gl-matrix'
-import { Program } from './Program'
+import { Program } from './webgl/Program'
 export class Object3D {
   public children: any[]
   public parent: Object3D | null

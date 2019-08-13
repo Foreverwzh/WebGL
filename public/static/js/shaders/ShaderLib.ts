@@ -72,21 +72,14 @@ export default {
     uniforms: mergeUniforms([
       UniformsLib.common,
       UniformsLib.envmap,
-      UniformsLib.aomap,
-      UniformsLib.lightmap,
       UniformsLib.emissivemap,
-      UniformsLib.bumpmap,
       UniformsLib.normalmap,
-      UniformsLib.displacementmap,
       UniformsLib.roughnessmap,
       UniformsLib.metalnessmap,
-      UniformsLib.fog,
-      UniformsLib.lights,
       {
         emissive: { value: [0, 0, 0] },
         roughness: { value: 0.5 },
-        metalness: { value: 0.5 },
-        envMapIntensity: { value: 1 }
+        metalness: { value: 0.5 }
       }
     ]),
 

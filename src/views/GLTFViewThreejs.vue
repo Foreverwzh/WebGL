@@ -1,9 +1,7 @@
 <template>
     <div>
-        <!-- <canvas id="glcanvas" width="1000" height="480"></canvas> -->
     </div>
 </template>
-
 <script lang="ts">
 import { Component, Vue, Emit } from 'vue-property-decorator'
 import axios from 'axios'

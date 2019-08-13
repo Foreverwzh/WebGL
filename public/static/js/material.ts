@@ -1,4 +1,11 @@
 import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTexture, MetalRoughnessTexture } from './Texture'
+import { Program } from './webgl/Program'
+export interface Shader {
+  name?: string,
+  uniforms: any,
+  vertexShader: string,
+  fragmentShader: string
+}
 
 export class Material {
   public name: string
@@ -38,4 +45,6 @@ export class Material {
   addMetalRoughnessTexture (texture: MetalRoughnessTexture) {
     this.metalRoughnessTexture = texture
   }
+
+  onBeforeCompile (shader: Shader, program: Program) { }
 }
