@@ -9,8 +9,8 @@ import common from './ShaderChunk/common.glsl'
 import defaultnormal_vertex from './ShaderChunk/defaultnormal_vertex.glsl'
 import emissivemap_fragment from './ShaderChunk/emissivemap_fragment.glsl'
 import emissivemap_pars_fragment from './ShaderChunk/emissivemap_pars_fragment.glsl'
-import map_fragment from './ShaderChunk/map_fragment.glsl'
-import map_pars_fragment from './ShaderChunk/map_pars_fragment.glsl'
+import texture_fragment from './ShaderChunk/texture_fragment.glsl'
+import texture_pars_fragment from './ShaderChunk/texture_pars_fragment.glsl'
 import metalnessmap_fragment from './ShaderChunk/metalnessmap_fragment.glsl'
 import metalnessmap_pars_fragment from './ShaderChunk/metalnessmap_pars_fragment.glsl'
 import normal_fragment_begin from './ShaderChunk/normal_fragment_begin.glsl'
@@ -38,8 +38,8 @@ export const ShaderChunk = {
   defaultnormal_vertex: defaultnormal_vertex,
   emissivemap_fragment: emissivemap_fragment,
   emissivemap_pars_fragment: emissivemap_pars_fragment,
-  map_fragment: map_fragment,
-  map_pars_fragment: map_pars_fragment,
+  texture_fragment: texture_fragment,
+  texture_pars_fragment: texture_pars_fragment,
   metalnessmap_fragment: metalnessmap_fragment,
   metalnessmap_pars_fragment: metalnessmap_pars_fragment,
   normal_fragment_begin: normal_fragment_begin,

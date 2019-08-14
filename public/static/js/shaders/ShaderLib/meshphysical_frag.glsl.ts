@@ -1,9 +1,14 @@
 export default /* glsl */`
 #define PHYSICAL
 
+#include <uv_pars_fragment>
+#include <texture_pars_fragment>
+
 void main() {
 
-	gl_FragColor = vec4(1, 0, 0, 1);
+	#include <texture_fragment>
+
+	gl_FragColor = texelColor;
 
 }
 `

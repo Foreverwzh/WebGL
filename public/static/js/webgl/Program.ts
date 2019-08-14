@@ -35,16 +35,15 @@ export class Program {
 
       // customDefines,
 
-      // material.albedoTexture ? '#define USE_MAP' : '',
-      // material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
-      // material.normalTexture ? '#define USE_NORMALMAP' : '',
-      // material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
-      // material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
+      material.albedoTexture ? '#define USE_TEXTURE' : '',
+      material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
+      material.normalTexture ? '#define USE_NORMALMAP' : '',
+      material.metalRoughnessTexture ? '#define USE_METALROUGHNESSMAP' : '',
       // parameters.vertexTangents ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
 
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
-      // material.doubleSided ? '#define DOUBLE_SIDED' : '',
+      material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
 
       'uniform mat4 modelMatrix;',
@@ -68,16 +67,15 @@ export class Program {
 
       // customDefines,
 
-      // material.albedoTexture ? '#define USE_MAP' : '',
-      // material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
-      // material.normalTexture ? '#define USE_NORMALMAP' : '',
-      // material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
-      // material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
+      material.albedoTexture ? '#define USE_TEXTURE' : '',
+      material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
+      material.normalTexture ? '#define USE_NORMALMAP' : '',
+      material.metalRoughnessTexture ? '#define USE_METALROUGHNESSMAP' : '',
       // parameters.vertexTangents ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 
-      // material.doubleSided ? '#define DOUBLE_SIDED' : '',
+      material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
       '\n'
 
@@ -99,6 +97,7 @@ export class Program {
     fs_code = this.unrollLoops(fs_code)
     fs_code = prefixFragment + fs_code
     // console.log(vs_code)
+    // console.log(fs_code)
     this.vertexShader = this.WebGLShader(gl, gl.VERTEX_SHADER, vs_code)
     this.fragmentShader = this.WebGLShader(gl, gl.FRAGMENT_SHADER, fs_code)
     gl.attachShader(this.program, this.vertexShader)
