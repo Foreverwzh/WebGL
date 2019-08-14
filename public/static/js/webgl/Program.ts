@@ -3,6 +3,8 @@ import ShaderLib from '../shaders/ShaderLib'
 import { Mesh } from '../Mesh'
 import { Material } from '../Material'
 import { ShaderChunk } from '../shaders/ShaderChunk'
+import { Uniforms } from './Uniforms'
+import { Attributes } from './Attributes'
 
 export class Program {
   public vertexShader: WebGLShader
@@ -10,7 +12,11 @@ export class Program {
   public program: WebGLProgram
   public code: string
   public usedNum: number = 1
+  public gl: WebGLRenderingContext
+  public cachedUniforms?: Uniforms
+  public cachedAttributes?: Attributes
   constructor (gl: WebGLRenderingContext, object: Mesh) {
+    this.gl = gl
     object.program = this
     const material = object.material
     const shader = ShaderLib[material.type]
@@ -29,47 +35,31 @@ export class Program {
 
       // customDefines,
 
-      material.albedoTexture ? '#define USE_MAP' : '',
-      material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
-      material.normalTexture ? '#define USE_NORMALMAP' : '',
-      material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
-      material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
+      // material.albedoTexture ? '#define USE_MAP' : '',
+      // material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
+      // material.normalTexture ? '#define USE_NORMALMAP' : '',
+      // material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
+      // material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
       // parameters.vertexTangents ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
 
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
-      material.doubleSided ? '#define DOUBLE_SIDED' : '',
+      // material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
 
       'uniform mat4 modelMatrix;',
-      'uniform mat4 modelViewMatrix;',
-      'uniform mat4 projectionMatrix;',
+      'uniform mat4 projectMatrix;',
       'uniform mat4 viewMatrix;',
-      'uniform mat3 normalMatrix;',
-      'uniform vec3 cameraPosition;',
 
       'attribute vec3 position;',
       'attribute vec3 normal;',
       'attribute vec2 uv;',
-
-      '#ifdef USE_TANGENT',
-
-      '	attribute vec4 tangent;',
-
-      '#endif',
-
-      '#ifdef USE_COLOR',
-
-      '	attribute vec3 color;',
-
-      '#endif',
-
       '\n'
     ].filter(str => str !== '').join('\n')
 
     const prefixFragment = [
-      '#extension GL_EXT_shader_texture_lod : enable',
-      '#extension GL_OES_standard_derivatives : enable',
+      // '#extension GL_EXT_shader_texture_lod : enable',
+      // '#extension GL_OES_standard_derivatives : enable',
       // customExtensions,
       'precision highp float;',
       'precision highp int;',
@@ -78,20 +68,17 @@ export class Program {
 
       // customDefines,
 
-      material.albedoTexture ? '#define USE_MAP' : '',
-      material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
-      material.normalTexture ? '#define USE_NORMALMAP' : '',
-      material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
-      material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
-
+      // material.albedoTexture ? '#define USE_MAP' : '',
+      // material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
+      // material.normalTexture ? '#define USE_NORMALMAP' : '',
+      // material.metalRoughnessTexture ? '#define USE_ROUGHNESSMAP' : '',
+      // material.metalRoughnessTexture ? '#define USE_METALNESSMAP' : '',
       // parameters.vertexTangents ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 
-      material.doubleSided ? '#define DOUBLE_SIDED' : '',
+      // material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
-      'uniform mat4 viewMatrix;',
-      'uniform vec3 cameraPosition;',
       '\n'
 
     ].filter(str => str !== '').join('\n')
@@ -111,7 +98,7 @@ export class Program {
     fs_code = this.replaceClippingPlaneNums(fs_code, parameters)
     fs_code = this.unrollLoops(fs_code)
     fs_code = prefixFragment + fs_code
-    console.log(fs_code)
+    // console.log(vs_code)
     this.vertexShader = this.WebGLShader(gl, gl.VERTEX_SHADER, vs_code)
     this.fragmentShader = this.WebGLShader(gl, gl.FRAGMENT_SHADER, fs_code)
     gl.attachShader(this.program, this.vertexShader)
@@ -171,6 +158,20 @@ export class Program {
     return str
       .replace(/NUM_CLIPPING_PLANES/g, parameters.numClippingPlanes)
       .replace(/UNION_CLIPPING_PLANES/g, (parameters.numClippingPlanes - parameters.numClipIntersection).toString())
+  }
+
+  getUniforms () {
+    if (this.cachedUniforms === undefined) {
+      this.cachedUniforms = new Uniforms(this.gl, this.program)
+    }
+    return this.cachedUniforms
+  }
+
+  getAttributes () {
+    if (this.cachedAttributes === undefined) {
+      this.cachedAttributes = new Attributes(this.gl, this.program)
+    }
+    return this.cachedAttributes
   }
 
   // getEncodingComponents (encoding) {

@@ -278,9 +278,9 @@ export class Kala {
     }
     const program = mesh.program.program
     gl.useProgram(program)
-    const attributes = new Attributes(gl, program)
-    const uniforms = new Uniforms(gl, program)
-    return
+    const uniforms = mesh.program.getUniforms()
+    const attrs = mesh.program.getAttributes()
+    // return
     const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
     const normalBuffer = this.initBufferData(mesh.geometry.normals)
     const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
@@ -294,66 +294,64 @@ export class Kala {
     if (vertexBuffer) {
       gl.bindBuffer(mesh.geometry.vertices.target, vertexBuffer)
       gl.vertexAttribPointer(
-                this.programInfo.attribLocations.vertexPosition,
+                attrs.map.position,
                 mesh.geometry.vertices.size,
                 mesh.geometry.vertices.componentType,
                 mesh.geometry.vertices.normalized,
                 mesh.geometry.vertices.stride,
                 mesh.geometry.vertices.offset)
-      gl.enableVertexAttribArray(
-                this.programInfo.attribLocations.vertexPosition)
+      gl.enableVertexAttribArray(attrs.map.position)
     }
-    if (normalBuffer) {
-      gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
-      gl.vertexAttribPointer(
-                this.programInfo.attribLocations.vertexNormal,
-                mesh.geometry.normals.size,
-                mesh.geometry.normals.componentType,
-                mesh.geometry.normals.normalized,
-                mesh.geometry.normals.stride,
-                mesh.geometry.normals.offset)
-      gl.enableVertexAttribArray(
-                this.programInfo.attribLocations.vertexNormal)
-    }
-    if (texcoordBuffer) {
-      gl.bindBuffer(mesh.geometry.textureCoords.target, texcoordBuffer)
-      gl.vertexAttribPointer(
-                this.programInfo.attribLocations.textureCoord,
-                mesh.geometry.textureCoords.size,
-                mesh.geometry.textureCoords.componentType,
-                mesh.geometry.textureCoords.normalized,
-                mesh.geometry.textureCoords.stride,
-                mesh.geometry.textureCoords.offset)
-      gl.enableVertexAttribArray(
-                this.programInfo.attribLocations.textureCoord)
-    }
-    if (tangentBuffer) {
-      gl.bindBuffer(mesh.geometry.tangent.target, tangentBuffer)
-      gl.vertexAttribPointer(
-                this.programInfo.attribLocations.tangent,
-                mesh.geometry.tangent.size,
-                mesh.geometry.tangent.componentType,
-                mesh.geometry.tangent.normalized,
-                mesh.geometry.tangent.stride,
-                mesh.geometry.tangent.offset)
-      gl.enableVertexAttribArray(
-                this.programInfo.attribLocations.tangent)
-    }
-    if (colorBuffer) {
-      gl.bindBuffer(mesh.geometry.color.target, colorBuffer)
-      gl.vertexAttribPointer(
-                this.programInfo.attribLocations.color,
-                mesh.geometry.color.size,
-                mesh.geometry.color.componentType,
-                mesh.geometry.color.normalized,
-                mesh.geometry.color.stride,
-                mesh.geometry.color.offset)
-      gl.enableVertexAttribArray(
-                this.programInfo.attribLocations.color)
-    }
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.projection, false, this.projectMatrix)
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.model, false, mesh.modelMatrix)
-    gl.uniformMatrix4fv(this.programInfo.uniformLocations.view, false, this.view)
+    // if (normalBuffer) {
+    //   gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
+    //   gl.vertexAttribPointer(
+    //             attrs.map.normal,
+    //             mesh.geometry.normals.size,
+    //             mesh.geometry.normals.componentType,
+    //             mesh.geometry.normals.normalized,
+    //             mesh.geometry.normals.stride,
+    //             mesh.geometry.normals.offset)
+    //   gl.enableVertexAttribArray(attrs.map.normal)
+    // }
+    // if (texcoordBuffer) {
+    //   gl.bindBuffer(mesh.geometry.textureCoords.target, texcoordBuffer)
+    //   gl.vertexAttribPointer(
+    //             attrs.map.uv,
+    //             mesh.geometry.textureCoords.size,
+    //             mesh.geometry.textureCoords.componentType,
+    //             mesh.geometry.textureCoords.normalized,
+    //             mesh.geometry.textureCoords.stride,
+    //             mesh.geometry.textureCoords.offset)
+    //   gl.enableVertexAttribArray(
+    //             attrs.map.uv)
+    // }
+    // if (tangentBuffer) {
+    //   gl.bindBuffer(mesh.geometry.tangent.target, tangentBuffer)
+    //   gl.vertexAttribPointer(
+    //             this.programInfo.attribLocations.tangent,
+    //             mesh.geometry.tangent.size,
+    //             mesh.geometry.tangent.componentType,
+    //             mesh.geometry.tangent.normalized,
+    //             mesh.geometry.tangent.stride,
+    //             mesh.geometry.tangent.offset)
+    //   gl.enableVertexAttribArray(
+    //             this.programInfo.attribLocations.tangent)
+    // }
+    // if (colorBuffer) {
+    //   gl.bindBuffer(mesh.geometry.color.target, colorBuffer)
+    //   gl.vertexAttribPointer(
+    //             this.programInfo.attribLocations.color,
+    //             mesh.geometry.color.size,
+    //             mesh.geometry.color.componentType,
+    //             mesh.geometry.color.normalized,
+    //             mesh.geometry.color.stride,
+    //             mesh.geometry.color.offset)
+    //   gl.enableVertexAttribArray(
+    //             this.programInfo.attribLocations.color)
+    // }
+    gl.uniformMatrix4fv(uniforms.map.projectMatrix.addr, false, this.projectMatrix)
+    gl.uniformMatrix4fv(uniforms.map.modelMatrix.addr, false, mesh.modelMatrix)
+    gl.uniformMatrix4fv(uniforms.map.viewMatrix.addr, false, this.view)
 
     // const normalTexture = mesh.material.normalTexture
     // if (normalTexture) {
@@ -370,21 +368,21 @@ export class Kala {
     //   this.setTextureParam(gl.TEXTURE_2D, normalTexture, supportsMips)
     //   gl.uniform1i(this.programInfo.uniformLocations.normalMap, 0)
     // }
-    const albedoTexture = mesh.material.albedoTexture
-    if (albedoTexture) {
-      let gltexture
-      if (albedoTexture.gltexture) {
-        gltexture = albedoTexture.gltexture
-      } else {
-        this.loadTextureURL(albedoTexture)
-        gltexture = albedoTexture.gltexture
-      }
-      gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture(gl.TEXTURE_2D, gltexture)
-      const supportsMips = albedoTexture.isPowerOf2
-      this.setTextureParam(gl.TEXTURE_2D, albedoTexture, supportsMips)
-      gl.uniform1i(this.programInfo.uniformLocations.albedoMap, 0)
-    }
+    // const albedoTexture = mesh.material.albedoTexture
+    // if (albedoTexture) {
+    //   let gltexture
+    //   if (albedoTexture.gltexture) {
+    //     gltexture = albedoTexture.gltexture
+    //   } else {
+    //     this.loadTextureURL(albedoTexture)
+    //     gltexture = albedoTexture.gltexture
+    //   }
+    //   gl.activeTexture(gl.TEXTURE0)
+    //   gl.bindTexture(gl.TEXTURE_2D, gltexture)
+    //   const supportsMips = albedoTexture.isPowerOf2
+    //   this.setTextureParam(gl.TEXTURE_2D, albedoTexture, supportsMips)
+    //   gl.uniform1i(this.programInfo.uniformLocations.albedoMap, 0)
+    // }
 
     const offset = 0
     const vertexCount = mesh.geometry.count

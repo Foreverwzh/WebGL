@@ -61,7 +61,7 @@ export default class ObjectLoad extends Vue {
     loader.load(url).then(object => {
       kala.add(object)
     })
-    console.log(kala)
+    console.log(kala.objects)
     console.log(loader)
   }
 

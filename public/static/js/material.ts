@@ -10,11 +10,11 @@ export interface Shader {
 export class Material {
   public name: string
   public type: string = 'standard'
-  public albedoTexture: AlbedoTexture
-  public normalTexture: NormalTexture
-  public occlusionTexture: OcclusionTexture
-  public emissiveTexture: EmissiveTexture
-  public metalRoughnessTexture: MetalRoughnessTexture
+  public albedoTexture?: AlbedoTexture
+  public normalTexture?: NormalTexture
+  public occlusionTexture?: OcclusionTexture
+  public emissiveTexture?: EmissiveTexture
+  public metalRoughnessTexture?: MetalRoughnessTexture
   public alphaMode: string
   public transparent: boolean = false
   public doubleSided: boolean
