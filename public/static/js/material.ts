@@ -1,5 +1,6 @@
 import { Texture, NormalTexture, OcclusionTexture, EmissiveTexture, AlbedoTexture, MetalRoughnessTexture } from './Texture'
 import { Program } from './webgl/Program'
+import ShaderLib from './shaders/ShaderLib'
 export interface Shader {
   name?: string,
   uniforms: any,
@@ -7,9 +8,23 @@ export interface Shader {
   fragmentShader: string
 }
 
+interface MaterialOption {
+  name?: string
+  type?: string
+  albedoTexture?: AlbedoTexture
+  normalTexture?: NormalTexture
+  occlusionTexture?: OcclusionTexture
+  emissiveTexture?: EmissiveTexture
+  metalRoughnessTexture?: MetalRoughnessTexture
+  alphaMode?: string
+  transparent?: boolean
+  doubleSided?: boolean
+  alphaCutoff?: number
+}
+
 export class Material {
   public name: string
-  public type: string = 'standard'
+  public type: string
   public albedoTexture?: AlbedoTexture
   public normalTexture?: NormalTexture
   public occlusionTexture?: OcclusionTexture
@@ -19,7 +34,11 @@ export class Material {
   public transparent: boolean = false
   public doubleSided: boolean
   public alphaCutoff: number
-  constructor (name?: string) {
+  public shader: Shader
+  constructor (option?: MaterialOption) {
+    const opt = option || {}
+    this.type = opt.type || 'standard'
+    this.shader = ShaderLib[this.type]
     this.name = name || ''
     this.alphaMode = 'OPAQUE'
     this.doubleSided = false

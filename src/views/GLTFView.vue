@@ -41,24 +41,18 @@ export default class ObjectLoad extends Vue {
       canvas.height = h
     }
   }
-  async mounted () {
+  mounted () {
     this.glEle = document.getElementById('glcanvas')
     const kala = this.kala = new Kala(this.glEle)
     let vsSource
     let fsSource
-    const sourceRes = await this.getShaderSource('/static/source/box/vs.glsl', '/static/source/box/fs.glsl');
-    [vsSource, fsSource ] = [sourceRes[0].data, sourceRes[1].data]
-
-    // kala.initShaderProgram(vsSource, fsSource)
     kala.camera.setPosition([0, 0, 10])
     kala.camera.Speed = 10
     this.renderer()
-    this.addResizeEvent()
     const url = '/static/model/DamagedHelmet/DamagedHelmet.gltf'
-    // const url = '/static/model/deir_el-sultan_jerusalem/scene.gltf'
-    // const url = '/static/model/pers_win_01/scene.gltf'
     const loader = new GLTFLoader()
     loader.load(url).then(object => {
+      this.addResizeEvent()
       kala.add(object)
     })
     console.log(kala.objects)

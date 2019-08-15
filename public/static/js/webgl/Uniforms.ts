@@ -1,4 +1,5 @@
 import { vec2, vec3, vec4, mat2, mat3, mat4 } from 'gl-matrix'
+import { AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture, Texture } from '../Texture'
 
 export class Uniforms {
   array: (SingleUniform | PureArrayUniform | StructuredUniform)[]
@@ -138,8 +139,13 @@ class SingleUniform {
     this.cache = mat4.copy(mat4.create(), v)
   }
 
-  setValueT1 (gl: WebGLRenderingContext, v: mat4, textures) {
-
+  setValueT1 (gl: WebGLRenderingContext, unit: number, gltexture: WebGLTexture) {
+    if (this.cache !== unit) {
+      gl.uniform1i(this.addr, unit)
+      this.cache = unit
+    }
+    gl.activeTexture(gl.TEXTURE0 + unit)
+    gl.bindTexture(gl.TEXTURE_2D, gltexture)
   }
 
   setValueT3D1 () {

@@ -7,7 +7,7 @@ const UniformsLib = {
     diffuse: { value: [238, 238, 238] },
     opacity: { value: 1.0 },
 
-    map: { value: null },
+    texture: { value: null },
     uvTransform: { value: mat3.create() },
 
     alphaMap: { value: null }
@@ -175,7 +175,7 @@ const UniformsLib = {
     opacity: { value: 1.0 },
     size: { value: 1.0 },
     scale: { value: 1.0 },
-    map: { value: null },
+    texture: { value: null },
     uvTransform: { value: mat3.create() }
 
   },
@@ -186,7 +186,7 @@ const UniformsLib = {
     opacity: { value: 1.0 },
     center: { value: vec2.fromValues(0.5, 0.5) },
     rotation: { value: 0.0 },
-    map: { value: null },
+    texture: { value: null },
     uvTransform: { value: mat3.create() }
 
   }

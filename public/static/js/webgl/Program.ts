@@ -15,11 +15,12 @@ export class Program {
   public gl: WebGLRenderingContext
   public cachedUniforms?: Uniforms
   public cachedAttributes?: Attributes
+
   constructor (gl: WebGLRenderingContext, object: Mesh) {
     this.gl = gl
     object.program = this
     const material = object.material
-    const shader = ShaderLib[material.type]
+    const shader = material.shader
     if (!shader) {
       throw new Error('unknown material type')
     }
@@ -87,13 +88,11 @@ export class Program {
     let fs_code = shader.fragmentShader
     vs_code = this.parseIncludes(vs_code)
     vs_code = this.replaceLightNums(vs_code, parameters)
-    vs_code = this.replaceClippingPlaneNums(vs_code, parameters)
     vs_code = this.unrollLoops(vs_code)
     vs_code = prefixVertex + vs_code
 
     fs_code = this.parseIncludes(fs_code)
     fs_code = this.replaceLightNums(fs_code, parameters)
-    fs_code = this.replaceClippingPlaneNums(fs_code, parameters)
     fs_code = this.unrollLoops(fs_code)
     fs_code = prefixFragment + fs_code
     // console.log(vs_code)
@@ -151,12 +150,6 @@ export class Program {
       .replace(/NUM_RECT_AREA_LIGHTS/g, parameters.numRectAreaLights)
       .replace(/NUM_POINT_LIGHTS/g, parameters.numPointLights)
       .replace(/NUM_HEMI_LIGHTS/g, parameters.numHemiLights)
-  }
-
-  replaceClippingPlaneNums (str: string, parameters) {
-    return str
-      .replace(/NUM_CLIPPING_PLANES/g, parameters.numClippingPlanes)
-      .replace(/UNION_CLIPPING_PLANES/g, (parameters.numClippingPlanes - parameters.numClipIntersection).toString())
   }
 
   getUniforms () {

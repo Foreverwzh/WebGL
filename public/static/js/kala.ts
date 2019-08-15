@@ -19,28 +19,6 @@ const WEBGL_COMPONENT_TYPES = {
   5126: Float32Array
 }
 
-interface AttribLocations {
-  vertexPosition: number
-  vertexNormal: number
-  textureCoord: number
-  tangent: number
-  color: number
-}
-
-interface UniformLocations {
-  projection: WebGLUniformLocation
-  model: WebGLUniformLocation
-  view: WebGLUniformLocation
-  albedoMap: WebGLUniformLocation
-  normalMap: WebGLUniformLocation
-}
-
-interface ProgramInfo {
-  program: WebGLProgram
-  attribLocations: AttribLocations
-  uniformLocations: UniformLocations
-}
-
 export class Kala {
   public Mesh = Mesh
   public Geometry = Geometry
@@ -61,9 +39,9 @@ export class Kala {
   public deltaTime: number = 0
   public pointerLock: boolean = false
   public programs: Program[] = []
-  public programInfo: ProgramInfo
   public shaders: any = {}
   public MAX_TEXTURE: number = 16
+  public textureUnits: number = 0
 
   public constructor (canvas: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl')
@@ -90,73 +68,6 @@ export class Kala {
     return projectMatrix
   }
 
-  loadShader (type: number, source: string, name: string) {
-    if (this.shaders[name]) return this.shaders[name]
-    const gl = this.gl
-    const shader = gl.createShader(type)
-    gl.shaderSource(shader, source)
-    gl.compileShader(shader)
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader))
-      gl.deleteShader(shader)
-      return null
-    }
-    this.shaders[name] = shader
-    return shader
-  }
-
-  initShaderProgram (vsSource: string, fsSource: string) {
-    const gl = this.gl
-
-    if (!vsSource) {
-      console.error('Empty VertexShader Source')
-      return false
-    }
-
-    if (!fsSource) {
-      console.error('Empty FragmentShader Source')
-      return false
-    }
-
-    const vertexShader = this.loadShader(gl.VERTEX_SHADER, vsSource, 'vs_normal')
-    const fragmentShader = this.loadShader(gl.FRAGMENT_SHADER, fsSource, 'fs_normal')
-
-    if (!vertexShader || !fragmentShader) {
-      return false
-    }
-
-    const shaderProgram = gl.createProgram()
-    if (!shaderProgram) {
-      console.error('Unable to create Program')
-      return null
-    }
-    gl.attachShader(shaderProgram, vertexShader)
-    gl.attachShader(shaderProgram, fragmentShader)
-    gl.linkProgram(shaderProgram)
-
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-      console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram))
-      return null
-    }
-    this.programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-        vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
-        textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
-        tangent: gl.getAttribLocation(shaderProgram, 'aTangent'),
-        color: gl.getAttribLocation(shaderProgram, 'aColor')
-      },
-      uniformLocations: {
-        projection: gl.getUniformLocation(shaderProgram, 'uProjection'),
-        model: gl.getUniformLocation(shaderProgram, 'uModel'),
-        view: gl.getUniformLocation(shaderProgram, 'uView'),
-        albedoMap: gl.getUniformLocation(shaderProgram, 'albedoMap'),
-        normalMap: gl.getUniformLocation(shaderProgram, 'normalMap')
-      }
-    }
-    return shaderProgram
-  }
   addCamera () {
     this.camera = new Camera(this)
     this.camera.kala = this
@@ -185,64 +96,6 @@ export class Kala {
     return dataBuffer
   }
 
-  loadTextureURL (texture: NormalTexture | AlbedoTexture | EmissiveTexture | OcclusionTexture) {
-    const gl = this.gl
-    const gltexture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, gltexture)
-    const level = 0
-    const internalFormat = texture instanceof AlbedoTexture ? gl.RGBA : gl.RGB
-    const width = 1
-    const height = 1
-    const border = 0
-    const srcFormat = internalFormat
-    const srcType = gl.UNSIGNED_BYTE
-    const pixel = new Uint8Array([0, 0, 255, 255])
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                      width, height, border, srcFormat, srcType,
-                      pixel)
-    texture.gltexture = gltexture
-    texture.width = width,
-    texture.height = height,
-    texture.isPowerOf2 = false
-    if (texture.url === null) return
-    const image = new Image()
-    image.onload = () => {
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha)
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, texture.unpackAlignment)
-      gl.bindTexture(gl.TEXTURE_2D, gltexture)
-      texture.width = image.width
-      texture.height = image.height
-      if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
-        texture.isPowerOf2 = true
-      }
-      // this.setTextureParam(sampler, imgInfo.isPowerOf2)
-      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
-    }
-    image.src = texture.url
-  }
-
-  setTextureParam (textureType: number, texture: NormalTexture | AlbedoTexture | EmissiveTexture | OcclusionTexture, supportsMips: boolean) {
-    const gl = this.gl
-    if (supportsMips) {
-
-      gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, texture.sampler.wrapS)
-      gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, texture.sampler.wrapT)
-
-      gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, texture.sampler.magFilter)
-      gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, texture.sampler.minFilter)
-
-    } else {
-
-      gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-      gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-      gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, texture.sampler.magFilter)
-      gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, texture.sampler.minFilter)
-
-    }
-  }
-
   renderObject (obj, matrix: mat4) {
     if (obj.translation) {
       mat4.translate(matrix, matrix, obj.translation)
@@ -265,6 +118,8 @@ export class Kala {
   }
 
   renderMesh (mesh: Mesh, matrix: mat4) {
+    this.textureUnits = 0
+
     const gl = this.gl
     if (!mesh.program) {
       const cache_p = hasCached(mesh.material, this.programs)
@@ -348,10 +203,11 @@ export class Kala {
     //   gl.enableVertexAttribArray(
     //             this.programInfo.attribLocations.color)
     // }
+    const uniformList = mesh.material.shader.uniforms
+    // console.log(uniformList)
     gl.uniformMatrix4fv(uniforms.map.projectMatrix.addr, false, this.projectMatrix)
     gl.uniformMatrix4fv(uniforms.map.modelMatrix.addr, false, mesh.modelMatrix)
     gl.uniformMatrix4fv(uniforms.map.viewMatrix.addr, false, this.view)
-
     // const normalTexture = mesh.material.normalTexture
     // if (normalTexture) {
     //   let gltexture
@@ -370,17 +226,21 @@ export class Kala {
     const albedoTexture = mesh.material.albedoTexture
     if (albedoTexture) {
       let gltexture
-      if (albedoTexture.gltexture) {
-        gltexture = albedoTexture.gltexture
-      } else {
-        this.loadTextureURL(albedoTexture)
-        gltexture = albedoTexture.gltexture
+      gltexture = albedoTexture.getGLTexture(gl)
+      uniformList.texture.value = this.textureUnits
+      uniformList.texture.gltexture = gltexture
+      this.textureUnits++
+    }
+
+    for (let u of uniforms.array) {
+      const v = uniformList[u.id]
+      if (uniformList[u.id]) {
+        if (v.gltexture) {
+          u.setValue(gl, v.value, v.gltexture)
+        } else {
+          u.setValue(gl, v.value)
+        }
       }
-      gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture(gl.TEXTURE_2D, gltexture)
-      const supportsMips = albedoTexture.isPowerOf2
-      this.setTextureParam(gl.TEXTURE_2D, albedoTexture, supportsMips)
-      gl.uniform1i(uniforms.map.texture.attr, 0)
     }
 
     const offset = 0
@@ -446,7 +306,6 @@ export class Kala {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     this.projectMatrix = this.initProjectMatrix()
     this.view = this.camera.getViewMatrix()
-
     // gl.useProgram(this.programInfo.program)
     for (let obj of this.objects) {
       const matrix = mat4.create()
