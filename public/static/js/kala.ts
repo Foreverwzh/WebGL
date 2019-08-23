@@ -1,6 +1,6 @@
 import { Camera } from './Camera'
 import * as util from './GLTool'
-import { mat4 } from 'gl-matrix'
+import { mat4, vec3 } from 'gl-matrix'
 import { Mesh } from './Mesh'
 import { Geometry, VertexAttribute, IndicesAttribute } from './Geometry'
 import { Material } from './Material'
@@ -8,7 +8,9 @@ import { Object3D } from './Object3d'
 import { Program, hasCached } from './webgl/Program'
 import { NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture } from './Texture'
 import { Attributes } from './webgl/Attributes'
-import { Uniforms } from './webgl/Uniforms'
+import { Uniforms, SingleUniform, StructuredUniform } from './webgl/Uniforms'
+import { Light, DirectionalLight } from './Light'
+import { Scene } from './Scene'
 
 const WEBGL_COMPONENT_TYPES = {
   5120: Int8Array,
@@ -42,6 +44,8 @@ export class Kala {
   public shaders: any = {}
   public MAX_TEXTURE: number = 16
   public textureUnits: number = 0
+  public activedProgram?: Program
+  public directionalLights: (DirectionalLight)[] = []
 
   public constructor (canvas: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl')
@@ -50,6 +54,7 @@ export class Kala {
     this.projectMatrix = this.initProjectMatrix()
     this.camera = new Camera(this)
     this.view = this.camera.getViewMatrix()
+    this.directionalLights.push(new DirectionalLight(vec3.fromValues(1, 1, 1), vec3.fromValues(1, 1, 1)))
     this.fullScreen()
   }
 
@@ -96,28 +101,29 @@ export class Kala {
     return dataBuffer
   }
 
-  renderObject (obj, matrix: mat4) {
-    if (obj.translation) {
-      mat4.translate(matrix, matrix, obj.translation)
-    }
-    if (obj.rotation) {
-      mat4.rotate(matrix, matrix, obj.rotation[3], obj.rotation.slice(0, 3))
-    }
-    if (obj.scale) {
-      mat4.scale(matrix, matrix, obj.scale)
+  renderObject (obj: Object3D | Scene | Mesh, matrix: mat4) {
+    const needsUpdate = obj.matrixWorldNeedsUpdate
+    if (needsUpdate) {
+      obj.updateMatrix()
+      obj.updateMatrixWorld(matrix)
+      matrix = obj.modelMatrix
+      obj.matrixWorldNeedsUpdate = false
     }
     if (obj instanceof Object3D) {
       for (let c of obj.children) {
+        if (needsUpdate) {
+          c.matrixWorldNeedsUpdate = true
+        }
         this.renderObject(c, matrix)
       }
       if (obj instanceof Mesh) {
-        this.renderMesh(obj, matrix)
+        this.renderMesh(obj)
       }
       return
     }
   }
 
-  renderMesh (mesh: Mesh, matrix: mat4) {
+  renderMesh (mesh: Mesh) {
     this.textureUnits = 0
 
     const gl = this.gl
@@ -132,7 +138,10 @@ export class Kala {
       }
     }
     const program = mesh.program.program
-    gl.useProgram(program)
+    if (this.activedProgram !== mesh.program) {
+      gl.useProgram(program)
+      this.activedProgram = mesh.program
+    }
     const uniforms = mesh.program.getUniforms()
     const attrs = mesh.program.getAttributes()
     // return
@@ -141,11 +150,6 @@ export class Kala {
     const texcoordBuffer = this.initBufferData(mesh.geometry.textureCoords)
     const tangentBuffer = this.initBufferData(mesh.geometry.tangent)
     const colorBuffer = this.initBufferData(mesh.geometry.color)
-    if (mesh.matrixWorldNeedsUpdate) {
-      mesh.matrixWorld = matrix
-      mesh.updateMatrixWorld()
-      mesh.matrixWorldNeedsUpdate = false
-    }
     if (vertexBuffer) {
       gl.bindBuffer(mesh.geometry.vertices.target, vertexBuffer)
       gl.vertexAttribPointer(
@@ -166,7 +170,7 @@ export class Kala {
     //             mesh.geometry.normals.normalized,
     //             mesh.geometry.normals.stride,
     //             mesh.geometry.normals.offset)
-    //   gl.enableVertexAttribArray(attrs.map.normal)
+    //   gl.enableVertexAttribArray(attrs.map.normal.addr)
     // }
     if (texcoordBuffer) {
       gl.bindBuffer(mesh.geometry.textureCoords.target, texcoordBuffer)
@@ -188,8 +192,7 @@ export class Kala {
     //             mesh.geometry.tangent.normalized,
     //             mesh.geometry.tangent.stride,
     //             mesh.geometry.tangent.offset)
-    //   gl.enableVertexAttribArray(
-    //             this.programInfo.attribLocations.tangent)
+    //   gl.enableVertexAttribArray(attrs.map.tangent.addr)
     // }
     // if (colorBuffer) {
     //   gl.bindBuffer(mesh.geometry.color.target, colorBuffer)
@@ -204,25 +207,17 @@ export class Kala {
     //             this.programInfo.attribLocations.color)
     // }
     const uniformList = mesh.material.shader.uniforms
-    // console.log(uniformList)
     gl.uniformMatrix4fv(uniforms.map.projectMatrix.addr, false, this.projectMatrix)
     gl.uniformMatrix4fv(uniforms.map.modelMatrix.addr, false, mesh.modelMatrix)
     gl.uniformMatrix4fv(uniforms.map.viewMatrix.addr, false, this.view)
-    // const normalTexture = mesh.material.normalTexture
-    // if (normalTexture) {
-    //   let gltexture
-    //   if (normalTexture.gltexture) {
-    //     gltexture = normalTexture.gltexture
-    //   } else {
-    //     this.loadTextureURL(normalTexture)
-    //     gltexture = normalTexture.gltexture
-    //   }
-    //   gl.activeTexture(gl.TEXTURE0)
-    //   gl.bindTexture(gl.TEXTURE_2D, gltexture)
-    //   const supportsMips = normalTexture.isPowerOf2
-    //   this.setTextureParam(gl.TEXTURE_2D, normalTexture, supportsMips)
-    //   gl.uniform1i(this.programInfo.uniformLocations.normalMap, 0)
-    // }
+    const normalTexture = mesh.material.normalTexture
+    if (normalTexture) {
+      let gltexture
+      gltexture = normalTexture.getGLTexture(gl)
+      uniformList.normalMap.value = this.textureUnits
+      uniformList.normalMap.gltexture = gltexture
+      this.textureUnits++
+    }
     const albedoTexture = mesh.material.albedoTexture
     if (albedoTexture) {
       let gltexture
@@ -231,13 +226,50 @@ export class Kala {
       uniformList.texture.gltexture = gltexture
       this.textureUnits++
     }
-
+    const occlusionTexture = mesh.material.occlusionTexture
+    if (occlusionTexture) {
+      let gltexture
+      gltexture = occlusionTexture.getGLTexture(gl)
+      uniformList.aoMap.value = this.textureUnits
+      uniformList.aoMap.gltexture = gltexture
+      this.textureUnits++
+    }
+    const metalRoughnessTexture = mesh.material.metalRoughnessTexture
+    if (metalRoughnessTexture) {
+      let gltexture
+      gltexture = metalRoughnessTexture.getGLTexture(gl)
+      uniformList.metalroughnessMap.value = this.textureUnits
+      uniformList.metalroughnessMap.gltexture = gltexture
+      this.textureUnits++
+    }
+    const emissiveTexture = mesh.material.emissiveTexture
+    if (emissiveTexture) {
+      let gltexture
+      gltexture = emissiveTexture.getGLTexture(gl)
+      uniformList.emissiveMap.value = this.textureUnits
+      uniformList.emissiveMap.gltexture = gltexture
+      uniformList.emissive.value = emissiveTexture.factor
+      this.textureUnits++
+    }
+    for (let i = 0; i < this.directionalLights.length; i++) {
+      const light = this.directionalLights[i]
+      uniformList.directionalLights.value[`directionalLights[${i}].direction`] = {
+        value: light.direction
+      }
+      uniformList.directionalLights.value[`directionalLights[${i}].color`] = {
+        value: light.color
+      }
+    }
     for (let u of uniforms.array) {
       const v = uniformList[u.id]
       if (uniformList[u.id]) {
-        if (v.gltexture) {
-          u.setValue(gl, v.value, v.gltexture)
-        } else {
+        if (u instanceof SingleUniform) {
+          if (v.gltexture) {
+            u.setValue(gl, v.value, v.gltexture)
+          } else {
+            u.setValue(gl, v.value)
+          }
+        } else if (u instanceof StructuredUniform) {
           u.setValue(gl, v.value)
         }
       }
@@ -299,16 +331,16 @@ export class Kala {
     }
     const gl = this.gl
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.clearColor(0.2, 0.4, 0.6, 0.6)
+    gl.clearColor(0.1, 0.1, 0.1, 1.0)
     gl.clearDepth(1.0)
     gl.enable(gl.DEPTH_TEST)
     gl.depthFunc(gl.LEQUAL)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     this.projectMatrix = this.initProjectMatrix()
     this.view = this.camera.getViewMatrix()
-    // gl.useProgram(this.programInfo.program)
     for (let obj of this.objects) {
       const matrix = mat4.create()
+      mat4.identity(matrix)
       this.renderObject(obj, matrix)
     }
   }

@@ -70,7 +70,6 @@ export class Texture {
         texture.isPowerOf2 = true
       }
       this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
-      // this.setTextureParam(sampler, imgInfo.isPowerOf2)
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
     }
     image.src = texture.url
@@ -124,13 +123,11 @@ export class OcclusionTexture extends Texture {
 }
 
 export class MetalRoughnessTexture extends Texture {
-  public metallicFactor: number
-  public roughnessFactor: number
+  public metallicFactor?: number
+  public roughnessFactor?: number
 
   constructor (name?: string) {
     super(name || '')
-    this.metallicFactor = 1
-    this.roughnessFactor = 1
   }
 }
 

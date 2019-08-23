@@ -19,7 +19,6 @@ export class Uniforms {
 
   parseUniform (info: WebGLActiveInfo, addr: WebGLUniformLocation) {
     const name = info.name
-    // if (name.indexOf('reflectLights') !== -1) console.log(name)
     const len = name.length
     const reg = /([\w\d_]+)(\])?(\[|\.)?/g
     const match = reg.exec(name)
@@ -30,9 +29,7 @@ export class Uniforms {
 
     if (idIsIndex) id = id | 0
     if (subscript === undefined || subscript === '[' && matchend + 2 === len) {
-      this.addUniform(this, subscript === undefined ?
-        new SingleUniform(id, info, addr) :
-        new PureArrayUniform(id, info, addr))
+      this.addUniform(this, new SingleUniform(id, info, addr))
     } else {
       let map = this.map
       let next = map[ id ]
@@ -40,6 +37,8 @@ export class Uniforms {
         next = new StructuredUniform(id)
         this.addUniform(this, next)
       }
+      id = name
+      this.addUniform(next, new SingleUniform(id, info, addr))
     }
   }
 
@@ -59,12 +58,12 @@ export class Uniforms {
   }
 }
 
-class SingleUniform {
+export class SingleUniform {
   id: string
   info: WebGLActiveInfo
   addr: WebGLUniformLocation
   setValue: Function
-  cache: null | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4
+  cache: any
   constructor (id: string, info: WebGLActiveInfo, addr: WebGLUniformLocation) {
     this.id = id
     this.info = info
@@ -104,37 +103,37 @@ class SingleUniform {
   }
 
   setValueV2fv (gl: WebGLRenderingContext, v: vec2) {
-    if (this.cache instanceof vec2 && vec2.equals(this.cache, v)) return
+    if (this.cache && vec2.equals(this.cache, v)) return
     gl.uniform2fv(this.addr, v)
     this.cache = vec2.copy(vec2.create(), v)
   }
 
   setValueV3fv (gl: WebGLRenderingContext, v: vec3) {
-    if (this.cache instanceof vec3 && vec3.equals(this.cache, v)) return
+    if (this.cache && vec3.equals(this.cache, v)) return
     gl.uniform3fv(this.addr, v)
     this.cache = vec3.copy(vec3.create(), v)
   }
 
   setValueV4fv (gl: WebGLRenderingContext, v: vec4) {
-    if (this.cache instanceof vec4 && vec4.equals(this.cache, v)) return
+    if (this.cache && vec4.equals(this.cache, v)) return
     gl.uniform4fv(this.addr, v)
     this.cache = vec4.copy(vec4.create(), v)
   }
 
   setValueM2 (gl: WebGLRenderingContext, v: mat2) {
-    if (this.cache instanceof mat2 && mat2.equals(this.cache, v)) return
+    if (this.cache && mat2.equals(this.cache, v)) return
     gl.uniformMatrix2fv(this.addr, false, v)
     this.cache = mat2.copy(mat2.create(), v)
   }
 
   setValueM3 (gl: WebGLRenderingContext, v: mat3) {
-    if (this.cache instanceof mat3 && mat3.equals(this.cache, v)) return
+    if (this.cache && mat3.equals(this.cache, v)) return
     gl.uniformMatrix3fv(this.addr, false, v)
     this.cache = mat3.copy(mat3.create(), v)
   }
 
   setValueM4 (gl: WebGLRenderingContext, v: mat4) {
-    if (this.cache instanceof mat4 && mat4.equals(this.cache, v)) return
+    if (this.cache && mat4.equals(this.cache, v)) return
     gl.uniformMatrix4fv(this.addr, false, v)
     this.cache = mat4.copy(mat4.create(), v)
   }
@@ -167,25 +166,25 @@ class SingleUniform {
   }
 
   setValueV2i (gl: WebGLRenderingContext, v: vec2) {
-    if (this.cache instanceof vec2 && vec2.equals(this.cache, v)) return
+    if (this.cache && this.cache instanceof vec2 && vec2.equals(this.cache, v)) return
     gl.uniform2iv(this.addr, new Int32Array(v.values()))
     this.cache = vec2.copy(vec2.create(), v)
   }
 
   setValueV3i (gl: WebGLRenderingContext, v: vec3) {
-    if (this.cache instanceof vec3 && vec3.equals(this.cache, v)) return
+    if (this.cache && this.cache instanceof vec3 && vec3.equals(this.cache, v)) return
     gl.uniform2iv(this.addr, new Int32Array(v.values()))
     this.cache = vec3.copy(vec3.create(), v)
   }
 
   setValueV4i (gl: WebGLRenderingContext, v: vec4) {
-    if (this.cache instanceof vec4 && vec4.equals(this.cache, v)) return
+    if (this.cache && this.cache instanceof vec4 && vec4.equals(this.cache, v)) return
     gl.uniform2iv(this.addr, new Int32Array(v.values()))
     this.cache = vec4.copy(vec4.create(), v)
   }
 }
 
-class PureArrayUniform {
+export class PureArrayUniform {
   id: string
   info: WebGLActiveInfo
   addr: WebGLUniformLocation
@@ -273,7 +272,7 @@ class PureArrayUniform {
   }
 }
 
-class StructuredUniform {
+export class StructuredUniform {
   array: (SingleUniform | PureArrayUniform)[]
   map: any
   id: string
@@ -286,7 +285,13 @@ class StructuredUniform {
   setValue (gl: WebGLRenderingContext, value) {
     for (let i = 0, n = this.array.length; i < n; i++) {
       const u = this.array[i]
-      u.setValue(gl, value[u.id])
+      if (value[u.id]) {
+        if (value[u.id].gltexture) {
+          u.setValue(gl, value[u.id].value, value[u.id].gltexture)
+        } else {
+          u.setValue(gl, value[u.id].value)
+        }
+      }
     }
   }
 }

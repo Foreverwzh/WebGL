@@ -1,4 +1,4 @@
-import { mat3, vec2 } from 'gl-matrix'
+import { mat3, vec2, vec4, vec3 } from 'gl-matrix'
 
 const UniformsLib = {
 
@@ -84,28 +84,19 @@ const UniformsLib = {
 
   },
 
-  gradientmap: {
+  metalroughnessmap: {
 
-    gradientMap: { value: null }
-
-  },
-
-  fog: {
-
-    fogDensity: { value: 0.00025 },
-    fogNear: { value: 1 },
-    fogFar: { value: 2000 },
-    fogColor: { value: [255, 255, 255] }
+    metalroughnessMap: { value: null }
 
   },
 
   lights: {
 
-    ambientLightColor: { value: [] },
+    ambientLightColor: { value: vec3.fromValues(0.03, 0.03, 0.03) },
 
     lightProbe: { value: [] },
 
-    directionalLights: { value: [], properties: {
+    directionalLights: { value: {}, properties: {
       direction: {},
       color: {},
 

@@ -20,6 +20,7 @@ export class Program {
     this.gl = gl
     object.program = this
     const material = object.material
+    const geometry = object.geometry
     const shader = material.shader
     if (!shader) {
       throw new Error('unknown material type')
@@ -40,7 +41,9 @@ export class Program {
       material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
       material.normalTexture ? '#define USE_NORMALMAP' : '',
       material.metalRoughnessTexture ? '#define USE_METALROUGHNESSMAP' : '',
-      // parameters.vertexTangents ? '#define USE_TANGENT' : '',
+      material.occlusionTexture ? '#define USE_AO' : '',
+      material.physicallyCorrectLights ? '#define PHYSICALLY_CORRECT_LIGHTS' : '',
+      geometry.tangent ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
 
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
@@ -54,6 +57,9 @@ export class Program {
       'attribute vec3 position;',
       'attribute vec3 normal;',
       'attribute vec2 uv;',
+
+      geometry.tangent ? 'attribute vec3 tangent;' : '',
+
       '\n'
     ].filter(str => str !== '').join('\n')
 
@@ -72,12 +78,15 @@ export class Program {
       material.emissiveTexture ? '#define USE_EMISSIVEMAP' : '',
       material.normalTexture ? '#define USE_NORMALMAP' : '',
       material.metalRoughnessTexture ? '#define USE_METALROUGHNESSMAP' : '',
-      // parameters.vertexTangents ? '#define USE_TANGENT' : '',
+      material.occlusionTexture ? '#define USE_AO' : '',
+      material.physicallyCorrectLights ? '#define PHYSICALLY_CORRECT_LIGHTS' : '',
+      geometry.tangent ? '#define USE_TANGENT' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 
       material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
+      'varying vec3 vViewPosition;',
       '\n'
 
     ].filter(str => str !== '').join('\n')
@@ -223,7 +232,7 @@ function getParameters (material: Material) {
     metalRoughnessTexture: !!material.metalRoughnessTexture,
     occlusionTexture: !!material.occlusionTexture,
     doubleSided: !!material.doubleSided,
-    numDirLights: 0,
+    numDirLights: 1,
     numSpotLights: 0,
     numRectAreaLights: 0,
     numPointLights: 0,

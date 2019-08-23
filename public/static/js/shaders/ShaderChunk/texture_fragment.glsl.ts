@@ -1,7 +1,9 @@
 export default /* glsl */`
 #ifdef USE_TEXTURE
 
-	vec4 texelColor = texture2D( texture, vUv );
+	vec4 baseColor = texture2D( texture, vUv );
+
+	diffuseColor *= baseColor;
 
 #endif
 `

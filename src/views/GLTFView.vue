@@ -7,7 +7,7 @@
 <script lang="ts">
 import { Component, Vue, Emit } from 'vue-property-decorator'
 import axios from 'axios'
-import { vec3, mat4 } from 'gl-matrix'
+import { vec3, mat4, quat } from 'gl-matrix'
 import { Kala } from './../../public/static/js/Kala'
 import { GLTFLoader } from './../../public/static/js/GLTFLoader'
 
@@ -21,6 +21,12 @@ export default class ObjectLoad extends Vue {
   }
   renderer () {
     this.kala.render()
+    if (this.kala.objects[0]) {
+      const r = quat.create()
+      quat.fromEuler(r, 0, -0.5, 0)
+      this.kala.objects[0].rotate(r)
+      this.kala.objects[0].matrixWorldNeedsUpdate = true
+    }
     this.animate = requestAnimationFrame(this.renderer)
   }
   addResizeEvent () {

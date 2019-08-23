@@ -17,12 +17,13 @@ export class Object3D {
     this.children = []
     this.position = vec3.fromValues(0, 0, 0)
     this.scale = vec3.fromValues(1, 1, 1)
-    this.rotation = quat.fromValues(0, 0, 0, 0)
+    this.rotation = quat.fromValues(0, 0, 0, 1)
     this.parent = null
     this.modelMatrix = mat4.create()
     this.matrix = mat4.create()
     mat4.identity(this.matrix)
     this.matrixWorldNeedsUpdate = true
+    this.matrixWorld = mat4.create()
   }
 
   add (obj: any) {
@@ -31,10 +32,7 @@ export class Object3D {
   }
 
   rotate (v: quat) {
-    const temp = mat4.create()
-    mat4.fromQuat(temp, v)
-    mat4.multiply(this.matrix, this.matrix, temp)
-    mat4.getRotation(this.rotation, this.matrix)
+    quat.multiply(this.rotation, v, this.rotation)
   }
 
   translate (v: vec3) {
@@ -44,20 +42,22 @@ export class Object3D {
 
   setPosition (v: vec3) {
     this.position = v
-    this.updateMatrix()
   }
 
   setScale (v: vec3) {
     this.scale = v
-    this.updateMatrix()
+  }
+
+  setRotation (v: quat) {
+    this.rotation = v
   }
 
   updateMatrix () {
     mat4.fromRotationTranslationScale(this.matrix, this.rotation, this.position, this.scale)
   }
 
-  updateMatrixWorld () {
+  updateMatrixWorld (matrixWorld: mat4) {
+    this.matrixWorld = matrixWorld
     mat4.multiply(this.modelMatrix, this.matrixWorld, this.matrix)
   }
-
 }

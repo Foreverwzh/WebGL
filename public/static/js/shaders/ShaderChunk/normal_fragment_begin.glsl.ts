@@ -20,7 +20,7 @@ export default /* glsl */`
 	#ifdef USE_TANGENT
 
 		vec3 tangent = normalize( vTangent );
-		vec3 bitangent = normalize( vBitangent );
+		vec3 bitangent = normalize( cross(normal, tangent) );
 
 		#ifdef DOUBLE_SIDED
 

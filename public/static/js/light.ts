@@ -1,10 +1,16 @@
 import { vec3 } from 'gl-matrix'
 
-class Light {
-  public position: vec3
-  constructor (pos: vec3) {
-    this.position = pos
+export class Light {
+  public direction: vec3
+  public color: vec3
+  constructor (dir: vec3, color: vec3) {
+    this.direction = dir
+    this.color = color
   }
 }
 
-export default Light
+export class DirectionalLight extends Light {
+  constructor (dir: vec3, color: vec3) {
+    super(dir, color)
+  }
+}

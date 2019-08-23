@@ -3,83 +3,22 @@ import { UniformsLib } from './UniformsLib'
 import { ShaderChunk } from './ShaderChunk'
 
 export default {
-  // basic: {
-
-  //   uniforms: mergeUniforms([
-  //     UniformsLib.common,
-  //     UniformsLib.specularmap,
-  //     UniformsLib.envmap,
-  //     UniformsLib.aomap,
-  //     UniformsLib.lightmap,
-  //     UniformsLib.fog
-  //   ]),
-
-  //   vertexShader: ShaderChunk.meshbasic_vert,
-  //   fragmentShader: ShaderChunk.meshbasic_frag
-
-  // },
-
-  // lambert: {
-
-  //   uniforms: mergeUniforms([
-  //     UniformsLib.common,
-  //     UniformsLib.specularmap,
-  //     UniformsLib.envmap,
-  //     UniformsLib.aomap,
-  //     UniformsLib.lightmap,
-  //     UniformsLib.emissivemap,
-  //     UniformsLib.fog,
-  //     UniformsLib.lights,
-  //     {
-  //       emissive: { value: new Color(0x000000) }
-  //     }
-  //   ]),
-
-  //   vertexShader: ShaderChunk.meshlambert_vert,
-  //   fragmentShader: ShaderChunk.meshlambert_frag
-
-  // },
-
-  // phong: {
-
-  //   uniforms: mergeUniforms([
-  //     UniformsLib.common,
-  //     UniformsLib.specularmap,
-  //     UniformsLib.envmap,
-  //     UniformsLib.aomap,
-  //     UniformsLib.lightmap,
-  //     UniformsLib.emissivemap,
-  //     UniformsLib.bumpmap,
-  //     UniformsLib.normalmap,
-  //     UniformsLib.displacementmap,
-  //     UniformsLib.gradientmap,
-  //     UniformsLib.fog,
-  //     UniformsLib.lights,
-  //     {
-  //       emissive: { value: new Color(0x000000) },
-  //       specular: { value: new Color(0x111111) },
-  //       shininess: { value: 30 }
-  //     }
-  //   ]),
-
-  //   vertexShader: ShaderChunk.meshphong_vert,
-  //   fragmentShader: ShaderChunk.meshphong_frag
-
-  // },
-
   standard: {
 
     uniforms: mergeUniforms([
       UniformsLib.common,
-      UniformsLib.envmap,
       UniformsLib.emissivemap,
       UniformsLib.normalmap,
-      UniformsLib.roughnessmap,
-      UniformsLib.metalnessmap,
+      UniformsLib.metalroughnessmap,
+      UniformsLib.aomap,
+      UniformsLib.lights,
       {
         emissive: { value: [0, 0, 0] },
         roughness: { value: 0.5 },
-        metalness: { value: 0.5 }
+        metalness: { value: 0.5 },
+        reflectivity: { value: 1.0 },
+        clearCoat: { value: 0 },
+        clearCoatRoughness: { value: 0 }
       }
     ]),
 

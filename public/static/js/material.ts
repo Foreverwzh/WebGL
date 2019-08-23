@@ -20,6 +20,7 @@ interface MaterialOption {
   transparent?: boolean
   doubleSided?: boolean
   alphaCutoff?: number
+  physicallyCorrectLights?: boolean
 }
 
 export class Material {
@@ -35,14 +36,19 @@ export class Material {
   public doubleSided: boolean
   public alphaCutoff: number
   public shader: Shader
-  constructor (option?: MaterialOption) {
-    const opt = option || {}
+  public physicallyCorrectLights: boolean
+  constructor (option: MaterialOption) {
+    let opt = option
+    if (!opt) {
+      opt = {}
+    }
     this.type = opt.type || 'standard'
     this.shader = ShaderLib[this.type]
-    this.name = name || ''
+    this.name = opt.name || ''
     this.alphaMode = 'OPAQUE'
     this.doubleSided = false
     this.alphaCutoff = 0.5
+    this.physicallyCorrectLights = opt.physicallyCorrectLights || false
   }
 
   addAlbedoTexture (texture: AlbedoTexture) {

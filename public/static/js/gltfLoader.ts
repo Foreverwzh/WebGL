@@ -7,6 +7,7 @@ import { NormalTexture, EmissiveTexture, OcclusionTexture, AlbedoTexture, MetalR
 import { arrayBufferToImageURL } from './GLTool'
 import axios from 'axios'
 import * as Path from 'path'
+import { quat } from 'gl-matrix'
 
 interface GLTF {
   accessors: any[]
@@ -101,7 +102,7 @@ export class GLTFLoader {
         const mesh = this.createMesh(gltf.meshes[meshIndex])
         mesh.parent = mesh
         meshs.add(mesh)
-        meshs.rotation = node.rotation || [0, 0, 0, 0]
+        meshs.rotation = quat.fromValues(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]) || quat.fromValues(0, 0, 0, 1)
       }
     })
     return meshs
@@ -202,7 +203,9 @@ export class GLTFLoader {
   }
 
   createMaterial (primitive: any): Material {
-    const material = new Material()
+    const material = new Material({
+      physicallyCorrectLights: true
+    })
     const materialIndex = primitive.material
     if (typeof materialIndex !== 'number') return material
     const materialInfo = this.gltf.materials[materialIndex]
@@ -222,6 +225,7 @@ export class GLTFLoader {
     }
     if (materialInfo.emissiveTexture && typeof materialInfo.emissiveTexture.index === 'number') {
       const texture: EmissiveTexture = this.createTexture(this.gltf.textures[materialInfo.emissiveTexture.index], 'emissive')
+      texture.factor = materialInfo.emissiveFactor || [0, 0, 0]
       material.addEmissiveTexture(texture)
     }
     if (materialInfo.occlusionTexture && typeof materialInfo.occlusionTexture.index === 'number') {
