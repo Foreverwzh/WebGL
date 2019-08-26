@@ -47,13 +47,13 @@ export default class ObjectLoad extends Vue {
     // Load a glTF resource
     loader.load(
       // resource URL
-      '/static/model/deir_el-sultan_jerusalem/scene.gltf',
+      '/static/model/DamagedHelmet/DamagedHelmet.gltf',
       // called when the resource is loaded
       function (gltf) {
 
         scene.add(gltf.scene)
         console.log(gltf)
-        _this.addCompile(gltf.scene.children)
+        // _this.addCompile(gltf.scene.children)
         // gltf.animations // Array<THREE.AnimationClip>
         // gltf.scene // THREE.Scene
         // gltf.scenes // Array<THREE.Scene>

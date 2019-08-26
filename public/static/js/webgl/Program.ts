@@ -87,6 +87,7 @@ export class Program {
       material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
       'varying vec3 vViewPosition;',
+      'uniform mat4 viewMatrix;',
       '\n'
 
     ].filter(str => str !== '').join('\n')
@@ -105,7 +106,7 @@ export class Program {
     fs_code = this.unrollLoops(fs_code)
     fs_code = prefixFragment + fs_code
     // console.log(vs_code)
-    // console.log(fs_code)
+    console.log(fs_code)
     this.vertexShader = this.WebGLShader(gl, gl.VERTEX_SHADER, vs_code)
     this.fragmentShader = this.WebGLShader(gl, gl.FRAGMENT_SHADER, fs_code)
     gl.attachShader(this.program, this.vertexShader)

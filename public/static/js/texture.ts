@@ -12,9 +12,9 @@ export class Texture {
   public url: string | null = null
   public gltexture?: WebGLTexture
   public sampler: Sampler
-  public flipY: boolean = true
-  public premultiplyAlpha: boolean = true
-  public unpackAlignment: boolean = true
+  public flipY: boolean = false
+  public premultiplyAlpha: boolean = false
+  public unpackAlignment: number = 4
   public width: number = 1
   public height: number = 1
   public isPowerOf2: boolean = true

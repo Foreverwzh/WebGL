@@ -94,7 +94,7 @@ const UniformsLib = {
 
     ambientLightColor: { value: vec3.fromValues(0.03, 0.03, 0.03) },
 
-    lightProbe: { value: [] },
+    lightProbe: { value: vec3.fromValues(1, 1, 1) },
 
     directionalLights: { value: {}, properties: {
       direction: {},

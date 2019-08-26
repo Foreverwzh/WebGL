@@ -27,12 +27,13 @@ void main() {
 
 	#include <texture_fragment>
 	#include <normal_fragment_maps>
-	#include <aomap_fragment>
 	#include <metalroughnessmap_fragment>
 	#include <emissivemap_fragment>
 
 	#include <light_physical_fragment>
 	#include <light_fragment_begin>
+	#include <light_fragment_end>
+	#include <aomap_fragment>
 
 	#ifdef USE_TANGENT
 
@@ -40,7 +41,7 @@ void main() {
 		vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
 
 	#endif
-	vec3 outgoingLight = reflectedLight.ambientColor + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + totalEmissiveRadiance;
+	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + totalEmissiveRadiance;
 	gl_FragColor = vec4(outgoingLight, diffuseColor.a);
 
 }

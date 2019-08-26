@@ -18,6 +18,7 @@ import light_common from './ShaderChunk/light_common.glsl'
 import light_physical_fragment from './ShaderChunk/light_physical_fragment.glsl'
 import light_pars_begin from './ShaderChunk/light_pars_begin.glsl'
 import light_fragment_begin from './ShaderChunk/light_fragment_begin.glsl'
+import light_fragment_end from './ShaderChunk/light_fragment_end.glsl'
 import light_physical_pars_fragment from './ShaderChunk/light_physical_pars_fragment.glsl'
 import bsdfs from './ShaderChunk/bsdfs.glsl'
 
@@ -44,6 +45,7 @@ export const ShaderChunk = {
   light_common: light_common,
   light_physical_fragment: light_physical_fragment,
   light_pars_begin: light_pars_begin,
+  light_fragment_end: light_fragment_end,
   light_fragment_begin: light_fragment_begin,
   light_physical_pars_fragment: light_physical_pars_fragment,
 
