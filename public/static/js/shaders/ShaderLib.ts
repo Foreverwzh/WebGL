@@ -1,6 +1,7 @@
 import { mergeUniforms } from './UniformsUtils'
 import { UniformsLib } from './UniformsLib'
 import { ShaderChunk } from './ShaderChunk'
+import { vec3 } from 'gl-matrix'
 
 export default {
   standard: {
@@ -13,9 +14,9 @@ export default {
       UniformsLib.aomap,
       UniformsLib.lights,
       {
-        emissive: { value: [0, 0, 0] },
-        roughness: { value: 0.5 },
-        metalness: { value: 0.5 },
+        emissive: { value: vec3.fromValues(1.0, 1.0, 1.0) },
+        roughness: { value: 1 },
+        metalness: { value: 1 },
         reflectivity: { value: 1.0 },
         clearCoat: { value: 0 },
         clearCoatRoughness: { value: 0 }

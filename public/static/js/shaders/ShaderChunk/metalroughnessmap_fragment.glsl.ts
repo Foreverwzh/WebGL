@@ -1,8 +1,10 @@
 export default /* glsl */`
+float metalnessFactor = metalness;
+float roughnessFactor = roughness;
 #ifdef USE_METALROUGHNESSMAP
 
-	vec3 metalroughness = normalize(texture2D( metalroughnessMap, vUv ).xyz * 2.0 - 1.0);
-	float metallic = metalroughness.r;
-	float roughness = metalroughness.g;
+	vec4 metalroughness = texture2D( metalroughnessMap, vUv );
+	metalnessFactor *= metalroughness.b;
+	roughnessFactor *= metalroughness.g;
 #endif
 `

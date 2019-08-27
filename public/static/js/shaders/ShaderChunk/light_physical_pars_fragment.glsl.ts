@@ -1,8 +1,8 @@
 export default `
 struct PhysicalMaterial
 {
-  vec4 diffuseColor;
-  vec4 specularColor;
+  vec3 diffuseColor;
+  vec3 specularColor;
   float specularRoughness;
 
   float clearCoat;

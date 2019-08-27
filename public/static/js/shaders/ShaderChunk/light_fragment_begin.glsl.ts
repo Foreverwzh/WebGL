@@ -6,7 +6,6 @@ geometry.normal = normal;
 geometry.viewDir = normalize( vMVPosition.xyz );
 
 IncidentLight directLight;
-ReflectedLight reflectedLight;
 
 #if NUM_DIR_LIGHTS > 0
 

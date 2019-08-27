@@ -8,7 +8,7 @@ import { Object3D } from './Object3d'
 import { Program, hasCached } from './webgl/Program'
 import { NormalTexture, AlbedoTexture, EmissiveTexture, OcclusionTexture, MetalRoughnessTexture } from './Texture'
 import { Attributes } from './webgl/Attributes'
-import { Uniforms, SingleUniform, StructuredUniform } from './webgl/Uniforms'
+import { Uniforms, SingleUniform, StructuredUniform, PureArrayUniform } from './webgl/Uniforms'
 import { Light, DirectionalLight } from './Light'
 import { Scene } from './Scene'
 
@@ -240,6 +240,8 @@ export class Kala {
       gltexture = metalRoughnessTexture.getGLTexture(gl)
       uniformList.metalroughnessMap.value = this.textureUnits
       uniformList.metalroughnessMap.gltexture = gltexture
+      uniformList.roughness.value = metalRoughnessTexture.roughness
+      uniformList.metalness.value = metalRoughnessTexture.metalness
       this.textureUnits++
     }
     const emissiveTexture = mesh.material.emissiveTexture
@@ -263,7 +265,7 @@ export class Kala {
     for (let u of uniforms.array) {
       const v = uniformList[u.id]
       if (uniformList[u.id]) {
-        if (u instanceof SingleUniform) {
+        if (u instanceof SingleUniform || u instanceof PureArrayUniform) {
           if (v.gltexture) {
             u.setValue(gl, v.value, v.gltexture)
           } else {
@@ -331,7 +333,7 @@ export class Kala {
     }
     const gl = this.gl
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.clearColor(0.1, 0.1, 0.1, 1.0)
+    gl.clearColor(0.4, 0.6, 0.1, 1.0)
     gl.clearDepth(1.0)
     gl.enable(gl.DEPTH_TEST)
     gl.depthFunc(gl.LEQUAL)

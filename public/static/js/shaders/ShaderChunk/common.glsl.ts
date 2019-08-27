@@ -18,7 +18,6 @@ struct IncidentLight {
 };
 
 struct ReflectedLight {
-  vec3 ambientColor;
 	vec3 directDiffuse;
 	vec3 directSpecular;
 	vec3 indirectDiffuse;

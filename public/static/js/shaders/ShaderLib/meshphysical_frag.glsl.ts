@@ -7,8 +7,11 @@ uniform float clearCoat;
 uniform float clearCoatRoughness;
 uniform float roughness;
 uniform float metalness;
+uniform vec3 diffuse;
+uniform float opacity;
 
 #include <common>
+#include <encodings_pars_fragment>
 #include <uv_pars_fragment>
 #include <texture_pars_fragment>
 #include <normalmap_pars_fragment>
@@ -22,7 +25,9 @@ uniform float metalness;
 
 void main() {
 
-	vec4 diffuseColor = vec4( 1.0 );
+	vec4 diffuseColor = vec4(diffuse, opacity);
+	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
+
 	vec3 totalEmissiveRadiance = emissive;
 
 	#include <texture_fragment>
@@ -35,14 +40,8 @@ void main() {
 	#include <light_fragment_end>
 	#include <aomap_fragment>
 
-	#ifdef USE_TANGENT
-
-		vTangent = normalize( transformedTangent );
-		vBitangent = normalize( cross( vNormal, vTangent ) * tangent.w );
-
-	#endif
-	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + totalEmissiveRadiance;
+	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
 	gl_FragColor = vec4(outgoingLight, diffuseColor.a);
-
+	gl_FragColor = LinearTosRGB( gl_FragColor );
 }
 `

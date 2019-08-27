@@ -20,10 +20,11 @@ export default class ObjectLoad extends Vue {
         this.addCompile(obj.children)
       } else if (obj.type === 'Mesh') {
         obj.material.onBeforeCompile = shader => {
-          shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>',
-          `#include <dithering_fragment>
-          gl_FragColor = vec4(vUv, 1.0, 1.0);
-          `)
+          // shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>',
+          // `#include <dithering_fragment>
+          // gl_FragColor = vec4(vUv, 1.0, 1.0);
+          // `)
+          console.log(shader.fragmentShader)
         }
       }
     })
@@ -32,7 +33,7 @@ export default class ObjectLoad extends Vue {
     const _this = this
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-    camera.position.set(0, 0, 50)
+    camera.position.set(0, 0, 5)
     const renderer = new THREE.WebGLRenderer()
     renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(renderer.domElement)
@@ -51,6 +52,10 @@ export default class ObjectLoad extends Vue {
       // called when the resource is loaded
       function (gltf) {
 
+        const light = new THREE.AmbientLight(0x404040) // soft white light
+        scene.add(light)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+        scene.add(directionalLight)
         scene.add(gltf.scene)
         console.log(gltf)
         // _this.addCompile(gltf.scene.children)
@@ -68,7 +73,7 @@ export default class ObjectLoad extends Vue {
 
       },
       // called when loading has errors
-      function (error) {
+      function () {
 
         console.log('An error happened')
 

@@ -123,8 +123,8 @@ export class OcclusionTexture extends Texture {
 }
 
 export class MetalRoughnessTexture extends Texture {
-  public metallicFactor?: number
-  public roughnessFactor?: number
+  public metalness: number = 1
+  public roughness: number = 1
 
   constructor (name?: string) {
     super(name || '')

@@ -3,7 +3,7 @@ export default /* glsl */`
 
 	vec4 emissiveColor = texture2D( emissiveMap, vUv );
 
-	// emissiveColor.rgb = emissiveMapTexelToLinear( emissiveColor ).rgb;
+	emissiveColor.rgb = sRGBToLinear( emissiveColor ).rgb;
 
 	totalEmissiveRadiance *= emissiveColor.rgb;
 

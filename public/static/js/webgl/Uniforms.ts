@@ -18,6 +18,7 @@ export class Uniforms {
   }
 
   parseUniform (info: WebGLActiveInfo, addr: WebGLUniformLocation) {
+    // console.log(info)
     const name = info.name
     const len = name.length
     const reg = /([\w\d_]+)(\])?(\[|\.)?/g
@@ -28,8 +29,13 @@ export class Uniforms {
     const subscript = match[3]
 
     if (idIsIndex) id = id | 0
+    // if (id === 'lightProbe' || id === 'directionalLights') {
+    //   console.log(match)
+    // }
     if (subscript === undefined || subscript === '[' && matchend + 2 === len) {
-      this.addUniform(this, new SingleUniform(id, info, addr))
+      this.addUniform(this, subscript === undefined ?
+        new SingleUniform(id, info, addr) :
+        new PureArrayUniform(id, info, addr))
     } else {
       let map = this.map
       let next = map[ id ]
@@ -38,7 +44,9 @@ export class Uniforms {
         this.addUniform(this, next)
       }
       id = name
-      this.addUniform(next, new SingleUniform(id, info, addr))
+      this.addUniform(next, subscript === undefined ?
+        new SingleUniform(id, info, addr) :
+        new PureArrayUniform(id, info, addr))
     }
   }
 
@@ -219,55 +227,87 @@ export class PureArrayUniform {
     }
   }
 
-  setValueV1fArray () {
+  setValueV1fArray (gl: WebGLRenderingContext, v: number) {
+    gl.uniform1f(this.addr, v)
+  }
+
+  setValueV2fArray (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 2)
+    gl.uniform2fv(this.addr, data)
+  }
+
+  setValueV3fArray (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 3)
+    gl.uniform3fv(this.addr, data)
+  }
+
+  setValueV4fArray (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 4)
+    gl.uniform4fv(this.addr, data)
+  }
+
+  setValueM2Array (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 4)
+    gl.uniformMatrix2fv(this.addr, false, data)
+  }
+
+  setValueM3Array (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 9)
+    gl.uniformMatrix3fv(this.addr, false, data)
+  }
+
+  setValueM4Array (gl: WebGLRenderingContext, v: number[][]) {
+    const data = this.flatten(v, this.info.size, 16)
+    gl.uniformMatrix4fv(this.addr, false, data)
+  }
+
+  setValueT1Array (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueV2fArray () {
+  setValueT6Array (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueV3fArray () {
+  setValueV1iArray (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueV4fArray () {
+  setValueV2iArray (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueM2Array () {
+  setValueV3iArray (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueM3Array () {
+  setValueV4iArray (gl: WebGLRenderingContext, v: number[][]) {
 
   }
 
-  setValueM4Array () {
+  flatten (array, nBlocks, blockSize) {
 
-  }
+    let firstElem = array[ 0 ]
 
-  setValueT1Array () {
+    if (firstElem <= 0 || firstElem > 0) return array
 
-  }
+    let n = nBlocks * blockSize
 
-  setValueT6Array () {
+    let r = new Float32Array(n)
 
-  }
+    if (nBlocks !== 0) {
 
-  setValueV1iArray () {
+      for (let i = 0, offset = 0; i !== nBlocks; ++ i) {
 
-  }
+        offset += blockSize
+        r[offset] = array[i][0]
+        r[offset + 1] = array[i][1]
+        r[offset + 2] = array[i][2]
+      }
 
-  setValueV2iArray () {
+    }
 
-  }
-
-  setValueV3iArray () {
-
-  }
-
-  setValueV4iArray () {
+    return r
 
   }
 }

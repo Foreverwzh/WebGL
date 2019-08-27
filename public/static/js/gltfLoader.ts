@@ -239,8 +239,8 @@ export class GLTFLoader {
     }
     if (materialInfo.pbrMetallicRoughness && materialInfo.pbrMetallicRoughness.metallicRoughnessTexture) {
       const texture: MetalRoughnessTexture = this.createTexture(this.gltf.textures[materialInfo.pbrMetallicRoughness.metallicRoughnessTexture.index], 'metalroughness')
-      texture.roughnessFactor = materialInfo.pbrMetallicRoughness.roughnessFactor || 1
-      texture.metallicFactor = materialInfo.metallicFactor || 1
+      texture.roughness = materialInfo.pbrMetallicRoughness.roughnessFactor || 1
+      texture.metalness = materialInfo.metallicFactor || 1
       material.addMetalRoughnessTexture(texture)
     }
     return material

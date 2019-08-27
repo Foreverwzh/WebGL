@@ -21,6 +21,7 @@ import light_fragment_begin from './ShaderChunk/light_fragment_begin.glsl'
 import light_fragment_end from './ShaderChunk/light_fragment_end.glsl'
 import light_physical_pars_fragment from './ShaderChunk/light_physical_pars_fragment.glsl'
 import bsdfs from './ShaderChunk/bsdfs.glsl'
+import encodings_pars_fragment from './ShaderChunk/encodings_pars_fragment.glsl'
 
 import meshphysical_frag from './ShaderLib/meshphysical_frag.glsl'
 import meshphysical_vert from './ShaderLib/meshphysical_vert.glsl'
@@ -28,6 +29,7 @@ import meshphysical_vert from './ShaderLib/meshphysical_vert.glsl'
 export const ShaderChunk = {
   common: common,
   bsdfs: bsdfs,
+  encodings_pars_fragment: encodings_pars_fragment,
   texture_fragment: texture_fragment,
   texture_pars_fragment: texture_pars_fragment,
   normal_fragment_begin: normal_fragment_begin,

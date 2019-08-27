@@ -4,7 +4,7 @@ const UniformsLib = {
 
   common: {
 
-    diffuse: { value: [238, 238, 238] },
+    diffuse: { value: vec3.fromValues(0.93, 0.93, 0.93) },
     opacity: { value: 1.0 },
 
     texture: { value: null },
@@ -67,19 +67,21 @@ const UniformsLib = {
   displacementmap: {
 
     displacementMap: { value: null },
-    displacementScale: { value: 1 },
+    displacementScale: { value: 1.0 },
     displacementBias: { value: 0 }
 
   },
 
   roughnessmap: {
 
+    roughness: { value: 1.0 },
     roughnessMap: { value: null }
 
   },
 
   metalnessmap: {
 
+    metalness: { value: 1.0 },
     metalnessMap: { value: null }
 
   },
@@ -94,7 +96,7 @@ const UniformsLib = {
 
     ambientLightColor: { value: vec3.fromValues(0.03, 0.03, 0.03) },
 
-    lightProbe: { value: vec3.fromValues(1, 1, 1) },
+    lightProbe: { value: new Array(9).fill(new Float32Array(3)) },
 
     directionalLights: { value: {}, properties: {
       direction: {},
