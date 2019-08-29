@@ -21,6 +21,7 @@ interface MaterialOption {
   doubleSided?: boolean
   alphaCutoff?: number
   physicallyCorrectLights?: boolean
+  color?: number[]
 }
 
 export class Material {
@@ -37,6 +38,7 @@ export class Material {
   public alphaCutoff: number
   public shader: Shader
   public physicallyCorrectLights: boolean
+  public color: number[]
   constructor (option: MaterialOption) {
     let opt = option
     if (!opt) {

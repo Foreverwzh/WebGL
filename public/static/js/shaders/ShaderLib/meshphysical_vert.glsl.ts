@@ -1,13 +1,8 @@
 export default /* glsl */`
 #define PHYSICAL
 
-#ifdef USE_TANGENT
-
-	varying vec3 vTangent;
-
-#endif
-
-varying vec4 vMVPosition;
+varying vec3 vViewPosition;
+varying vec3 vNormal;
 
 #include <common>
 #include <uv_pars_vertex>
@@ -15,7 +10,10 @@ varying vec4 vMVPosition;
 void main() {
 
 	#include <uv_vertex>
-	vMVPosition = viewMatrix * modelMatrix * vec4(position, 1.0);
-	gl_Position = projectMatrix * vMVPosition;
+	vec3 transformedNormal = (normalMatrix * vec4(normal, 1.0)).xyz;
+	vNormal = normalize( transformedNormal );
+	vec4 mvPosition = viewMatrix * modelMatrix * vec4(position, 1.0);
+	vViewPosition = -mvPosition.xyz;
+	gl_Position = projectMatrix * mvPosition;
 }
 `

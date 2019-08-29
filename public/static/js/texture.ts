@@ -7,26 +7,43 @@ export interface Sampler {
   wrapT: number
 }
 
+interface TextureOption {
+  name?: string
+  url?: string| any[] | null
+  sampler?: Sampler
+  flipY?: boolean
+  premultiplyAlpha?: boolean
+  unpackAlignment?: number
+  width?: number
+  height?: number
+}
+
 export class Texture {
   public name: string
-  public url: string | null = null
+  public url: string| any[] | null = null
   public gltexture?: WebGLTexture
   public sampler: Sampler
-  public flipY: boolean = false
-  public premultiplyAlpha: boolean = false
-  public unpackAlignment: number = 4
+  public flipY: boolean
+  public premultiplyAlpha: boolean
+  public unpackAlignment: number
   public width: number = 1
   public height: number = 1
   public isPowerOf2: boolean = true
 
-  constructor (name?: string) {
-    this.name = name || ''
-    this.sampler = {
+  constructor (opt: TextureOption) {
+    this.name = opt.name || ''
+    this.url = opt.url || null
+    this.sampler = opt.sampler || {
       magFilter: 9729,
       minFilter: 9729,
       wrapS: 10497,
       wrapT: 10497
     }
+    this.flipY = opt.flipY || false
+    this.premultiplyAlpha = opt.premultiplyAlpha || false
+    this.unpackAlignment = opt.unpackAlignment || 4
+    this.width = opt.width
+    this.height = opt.height
   }
 
   setSampler (opt: Sampler) {
@@ -41,7 +58,6 @@ export class Texture {
   loadTextureURL (gl: WebGLRenderingContext) {
     const texture = this
     const gltexture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, gltexture)
     const level = 0
     const internalFormat = texture instanceof AlbedoTexture ? gl.RGBA : gl.RGB
     const width = 1
@@ -50,29 +66,53 @@ export class Texture {
     const srcFormat = internalFormat
     const srcType = gl.UNSIGNED_BYTE
     const pixel = new Uint8Array([0, 0, 255, 255])
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                      width, height, border, srcFormat, srcType,
-                      pixel)
     texture.gltexture = gltexture
     texture.width = width,
     texture.height = height,
-    texture.isPowerOf2 = false
+    gl.bindTexture(gl.TEXTURE_2D, gltexture)
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                      width, height, border, srcFormat, srcType,
+                      pixel)
     if (texture.url === null) return
-    const image = new Image()
-    image.onload = () => {
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha)
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, texture.unpackAlignment)
-      gl.bindTexture(gl.TEXTURE_2D, gltexture)
-      texture.width = image.width
-      texture.height = image.height
-      if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
-        texture.isPowerOf2 = true
+    if (Array.isArray(texture.url)) {
+      if (texture.url.length === 6) {
+        for (let i = 0; i < 6; i++) {
+          const url = texture.url[i]
+          const image = new Image()
+          image.onload = () => {
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha)
+            gl.pixelStorei(gl.UNPACK_ALIGNMENT, texture.unpackAlignment)
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
+            texture.width = image.width
+            texture.height = image.height
+            let isPowerOf2 = false
+            if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
+              isPowerOf2 = true
+            }
+            this.setTextureParam(gl, gl.TEXTURE_2D, isPowerOf2)
+            gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, image)
+          }
+          image.src = url
+        }
       }
-      this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
-      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
+    } else {
+      const image = new Image()
+      image.onload = () => {
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha)
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, texture.unpackAlignment)
+        gl.bindTexture(gl.TEXTURE_2D, gltexture)
+        texture.width = image.width
+        texture.height = image.height
+        if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
+          texture.isPowerOf2 = true
+        }
+        this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
+      }
+      image.src = texture.url
     }
-    image.src = texture.url
   }
 
   setTextureParam (gl: WebGLRenderingContext, textureType: number, supportsMips: boolean) {
@@ -104,21 +144,21 @@ export class Texture {
 }
 
 export class NormalTexture extends Texture {
-  constructor (name?: string) {
-    super(name || '')
+  constructor (opt: TextureOption) {
+    super(opt)
   }
 }
 
 export class EmissiveTexture extends Texture {
   public factor: number[]
-  constructor (name?: string) {
-    super(name || '')
+  constructor (opt: TextureOption) {
+    super(opt)
   }
 }
 
 export class OcclusionTexture extends Texture {
-  constructor (name?: string) {
-    super(name || '')
+  constructor (opt: TextureOption) {
+    super(opt)
   }
 }
 
@@ -126,15 +166,15 @@ export class MetalRoughnessTexture extends Texture {
   public metalness: number = 1
   public roughness: number = 1
 
-  constructor (name?: string) {
-    super(name || '')
+  constructor (opt: TextureOption) {
+    super(opt)
   }
 }
 
 export class AlbedoTexture extends Texture {
   public baseColorFactor: number[]
-  constructor (name?: string) {
-    super(name || '')
+  constructor (opt: TextureOption) {
+    super(opt)
     this.baseColorFactor = [1, 1, 1, 1]
   }
 }

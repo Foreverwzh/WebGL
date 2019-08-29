@@ -52,7 +52,7 @@ export default class ObjectLoad extends Vue {
     const kala = this.kala = new Kala(this.glEle)
     let vsSource
     let fsSource
-    kala.camera.setPosition([0, 0, 10])
+    kala.camera.setPosition([0, 0, 6])
     kala.camera.Speed = 10
     this.renderer()
     const url = '/static/model/DamagedHelmet/DamagedHelmet.gltf'

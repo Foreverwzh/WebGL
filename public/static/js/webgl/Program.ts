@@ -53,6 +53,7 @@ export class Program {
       'uniform mat4 modelMatrix;',
       'uniform mat4 projectMatrix;',
       'uniform mat4 viewMatrix;',
+      'uniform mat4 normalMatrix;',
 
       'attribute vec3 position;',
       'attribute vec3 normal;',
@@ -65,7 +66,7 @@ export class Program {
 
     const prefixFragment = [
       // '#extension GL_EXT_shader_texture_lod : enable',
-      // '#extension GL_OES_standard_derivatives : enable',
+      '#extension GL_OES_standard_derivatives : enable',
       // customExtensions,
       'precision highp float;',
       'precision highp int;',
@@ -86,7 +87,6 @@ export class Program {
 
       material.doubleSided ? '#define DOUBLE_SIDED' : '',
       // parameters.flipSided ? '#define FLIP_SIDED' : '',
-      'varying vec3 vViewPosition;',
       'uniform mat4 viewMatrix;',
       '\n'
 

@@ -1,7 +1,6 @@
 export default /* glsl */`
 #define PHYSICAL
 
-varying vec4 vMVPosition;
 uniform vec3 emissive;
 uniform float clearCoat;
 uniform float clearCoatRoughness;
@@ -9,6 +8,9 @@ uniform float roughness;
 uniform float metalness;
 uniform vec3 diffuse;
 uniform float opacity;
+
+varying vec3 vViewPosition;
+varying vec3 vNormal;
 
 #include <common>
 #include <encodings_pars_fragment>
@@ -31,6 +33,7 @@ void main() {
 	vec3 totalEmissiveRadiance = emissive;
 
 	#include <texture_fragment>
+	#include <normal_fragment_begin>
 	#include <normal_fragment_maps>
 	#include <metalroughnessmap_fragment>
 	#include <emissivemap_fragment>

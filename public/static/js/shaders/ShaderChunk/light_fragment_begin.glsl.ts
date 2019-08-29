@@ -1,9 +1,9 @@
 export default `
 GeometricContext geometry;
 
-geometry.position = - vMVPosition.xyz;
+geometry.position = -vViewPosition;
 geometry.normal = normal;
-geometry.viewDir = normalize( vMVPosition.xyz );
+geometry.viewDir = normalize( vViewPosition );
 
 IncidentLight directLight;
 

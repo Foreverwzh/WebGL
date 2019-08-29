@@ -46,15 +46,17 @@ export class Kala {
   public textureUnits: number = 0
   public activedProgram?: Program
   public directionalLights: (DirectionalLight)[] = []
+  public scene: Scene
 
   public constructor (canvas: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl')
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
+    this.scene = new Scene()
     this.projectMatrix = this.initProjectMatrix()
     this.camera = new Camera(this)
     this.view = this.camera.getViewMatrix()
-    this.directionalLights.push(new DirectionalLight(vec3.fromValues(1, 1, 1), vec3.fromValues(1, 1, 1)))
+    this.directionalLights.push(new DirectionalLight(vec3.fromValues(1, 1, 1), vec3.fromValues(1.0, 1.0, 1.0)))
     this.fullScreen()
   }
 
@@ -161,17 +163,17 @@ export class Kala {
                 mesh.geometry.vertices.offset)
       gl.enableVertexAttribArray(attrs.map.position.addr)
     }
-    // if (normalBuffer) {
-    //   gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
-    //   gl.vertexAttribPointer(
-    //             attrs.map.normal,
-    //             mesh.geometry.normals.size,
-    //             mesh.geometry.normals.componentType,
-    //             mesh.geometry.normals.normalized,
-    //             mesh.geometry.normals.stride,
-    //             mesh.geometry.normals.offset)
-    //   gl.enableVertexAttribArray(attrs.map.normal.addr)
-    // }
+    if (normalBuffer) {
+      gl.bindBuffer(mesh.geometry.normals.target, normalBuffer)
+      gl.vertexAttribPointer(
+                attrs.map.normal.addr,
+                mesh.geometry.normals.size,
+                mesh.geometry.normals.componentType,
+                mesh.geometry.normals.normalized,
+                mesh.geometry.normals.stride,
+                mesh.geometry.normals.offset)
+      gl.enableVertexAttribArray(attrs.map.normal.addr)
+    }
     if (texcoordBuffer) {
       gl.bindBuffer(mesh.geometry.textureCoords.target, texcoordBuffer)
       gl.vertexAttribPointer(
@@ -210,6 +212,13 @@ export class Kala {
     gl.uniformMatrix4fv(uniforms.map.projectMatrix.addr, false, this.projectMatrix)
     gl.uniformMatrix4fv(uniforms.map.modelMatrix.addr, false, mesh.modelMatrix)
     gl.uniformMatrix4fv(uniforms.map.viewMatrix.addr, false, this.view)
+    const modelView = mat4.create()
+    mat4.multiply(modelView, this.view, mesh.modelMatrix)
+    const normalMatrix = mat4.create()
+    mat4.invert(normalMatrix, modelView)
+    mat4.transpose(normalMatrix, normalMatrix)
+    gl.uniformMatrix4fv(uniforms.map.normalMatrix.addr, false, normalMatrix)
+
     const normalTexture = mesh.material.normalTexture
     if (normalTexture) {
       let gltexture
@@ -333,7 +342,7 @@ export class Kala {
     }
     const gl = this.gl
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-    gl.clearColor(0.4, 0.6, 0.1, 1.0)
+    gl.clearColor(0, 0, 0, 1.0)
     gl.clearDepth(1.0)
     gl.enable(gl.DEPTH_TEST)
     gl.depthFunc(gl.LEQUAL)

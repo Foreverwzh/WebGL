@@ -268,19 +268,29 @@ export class GLTFLoader {
     let texture
     switch (type) {
       case 'normal':
-        texture = new NormalTexture(texInfo.name)
+        texture = new NormalTexture({
+          name: texInfo.name
+        })
         break
       case 'emissive':
-        texture = new EmissiveTexture(texInfo.name)
+        texture = new EmissiveTexture({
+          name: texInfo.name
+        })
         break
       case 'occlusion':
-        texture = new OcclusionTexture(texInfo.name)
+        texture = new OcclusionTexture({
+          name: texInfo.name
+        })
         break
       case 'albedo':
-        texture = new AlbedoTexture(texInfo.name)
+        texture = new AlbedoTexture({
+          name: texInfo.name
+        })
         break
       case 'metalroughness':
-        texture = new MetalRoughnessTexture(texInfo.name)
+        texture = new MetalRoughnessTexture({
+          name: texInfo.name
+        })
         break
     }
     if (typeof texInfo.source !== 'number') return texture

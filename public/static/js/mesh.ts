@@ -5,17 +5,17 @@ export class Mesh extends Object3D {
   public geometry: Geometry
   public material: Material
 
-  constructor (geometry: Geometry, material: Material) {
+  constructor (geometry?: Geometry, material?: Material) {
     super()
     this.geometry = geometry
     this.material = material
   }
 
-  changeGeometry (geometry: Geometry) {
+  setGeometry (geometry: Geometry) {
     this.geometry = geometry
   }
 
-  changeMaterial (material: Material) {
+  setMaterial (material: Material) {
     this.material = material
   }
 }
