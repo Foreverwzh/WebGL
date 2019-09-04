@@ -51,6 +51,11 @@ export class Material {
     this.doubleSided = false
     this.alphaCutoff = 0.5
     this.physicallyCorrectLights = opt.physicallyCorrectLights || false
+    this.albedoTexture = opt.albedoTexture || null
+    this.normalTexture = opt.normalTexture || null
+    this.occlusionTexture = opt.occlusionTexture || null
+    this.emissiveTexture = opt.emissiveTexture || null
+    this.metalRoughnessTexture = opt.metalRoughnessTexture || null
   }
 
   addAlbedoTexture (texture: AlbedoTexture) {

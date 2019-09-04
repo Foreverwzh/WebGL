@@ -10,6 +10,7 @@ import axios from 'axios'
 import { vec3, mat4, quat } from 'gl-matrix'
 import { Kala } from './../../public/static/js/Kala'
 import { GLTFLoader } from './../../public/static/js/GLTFLoader'
+import { Background } from '../../public/static/js/webgl/Background'
 
 @Component
 export default class ObjectLoad extends Vue {
@@ -21,11 +22,11 @@ export default class ObjectLoad extends Vue {
   }
   renderer () {
     this.kala.render()
-    if (this.kala.objects[0]) {
+    if (this.kala.objects[1]) {
       const r = quat.create()
       quat.fromEuler(r, 0, -0.5, 0)
-      this.kala.objects[0].rotate(r)
-      this.kala.objects[0].matrixWorldNeedsUpdate = true
+      this.kala.objects[1].rotate(r)
+      this.kala.objects[1].matrixWorldNeedsUpdate = true
     }
     this.animate = requestAnimationFrame(this.renderer)
   }
@@ -52,8 +53,19 @@ export default class ObjectLoad extends Vue {
     const kala = this.kala = new Kala(this.glEle)
     let vsSource
     let fsSource
+    console.log(kala)
     kala.camera.setPosition([0, 0, 6])
     kala.camera.Speed = 10
+    kala.background = new Background()
+    kala.background.setBackgroundMaterial([
+      '/static/image/skybox/right.jpg',
+      '/static/image/skybox/left.jpg',
+      '/static/image/skybox/top.jpg',
+      '/static/image/skybox/bottom.jpg',
+      '/static/image/skybox/back.jpg',
+      '/static/image/skybox/front.jpg'
+    ])
+    kala.add(kala.background)
     this.renderer()
     const url = '/static/model/DamagedHelmet/DamagedHelmet.gltf'
     const loader = new GLTFLoader()
@@ -61,7 +73,6 @@ export default class ObjectLoad extends Vue {
       this.addResizeEvent()
       kala.add(object)
     })
-    console.log(kala.objects)
     console.log(loader)
   }
 

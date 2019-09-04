@@ -11,6 +11,7 @@ import { Attributes } from './webgl/Attributes'
 import { Uniforms, SingleUniform, StructuredUniform, PureArrayUniform } from './webgl/Uniforms'
 import { Light, DirectionalLight } from './Light'
 import { Scene } from './Scene'
+import { Background } from './webgl/Background'
 
 const WEBGL_COMPONENT_TYPES = {
   5120: Int8Array,
@@ -47,6 +48,7 @@ export class Kala {
   public activedProgram?: Program
   public directionalLights: (DirectionalLight)[] = []
   public scene: Scene
+  public background: Background = null
 
   public constructor (canvas: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl')
@@ -62,16 +64,22 @@ export class Kala {
 
   public initProjectMatrix (): mat4 {
     const gl = this.gl
-    const fieldOfView = 45 * Math.PI / 180
+    const fovy = 45 * Math.PI / 180
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
     const zNear = 0.1
     const zFar = 100.0
     const projectMatrix = mat4.create()
     mat4.perspective(projectMatrix,
-            fieldOfView,
+            fovy,
             aspect,
             zNear,
             zFar)
+    // let xmin, xmax, ymin, ymax
+    // ymax = zNear * Math.tan(fovy / 2)
+    // ymin = -ymax
+    // xmin = ymin * aspect
+    // xmax = ymax * aspect
+    // mat4.frustum(projectMatrix, xmin, xmax, ymin, ymax, zNear, zFar)
     return projectMatrix
   }
 
@@ -135,7 +143,7 @@ export class Kala {
         mesh.program = cache_p
         cache_p.usedNum ++
       } else {
-        mesh.program = new Program(gl, mesh)
+        mesh.program = new Program(gl, mesh, this.background)
         this.programs.push(mesh.program)
       }
     }
@@ -214,10 +222,13 @@ export class Kala {
     gl.uniformMatrix4fv(uniforms.map.viewMatrix.addr, false, this.view)
     const modelView = mat4.create()
     mat4.multiply(modelView, this.view, mesh.modelMatrix)
-    const normalMatrix = mat4.create()
-    mat4.invert(normalMatrix, modelView)
-    mat4.transpose(normalMatrix, normalMatrix)
-    gl.uniformMatrix4fv(uniforms.map.normalMatrix.addr, false, normalMatrix)
+    if (uniforms.map.normalMatrix) {
+      const normalMatrix = mat4.create()
+      mat4.invert(normalMatrix, modelView)
+      mat4.transpose(normalMatrix, normalMatrix)
+      // console.log(modelView)
+      gl.uniformMatrix4fv(uniforms.map.normalMatrix.addr, false, normalMatrix)
+    }
 
     const normalTexture = mesh.material.normalTexture
     if (normalTexture) {
@@ -231,8 +242,13 @@ export class Kala {
     if (albedoTexture) {
       let gltexture
       gltexture = albedoTexture.getGLTexture(gl)
-      uniformList.texture.value = this.textureUnits
-      uniformList.texture.gltexture = gltexture
+      if (mesh instanceof Background) {
+        uniformList.skybox.value = this.textureUnits
+        uniformList.skybox.gltexture = gltexture
+      } else {
+        uniformList.texture.value = this.textureUnits
+        uniformList.texture.gltexture = gltexture
+      }
       this.textureUnits++
     }
     const occlusionTexture = mesh.material.occlusionTexture
@@ -262,13 +278,22 @@ export class Kala {
       uniformList.emissive.value = emissiveTexture.factor
       this.textureUnits++
     }
-    for (let i = 0; i < this.directionalLights.length; i++) {
-      const light = this.directionalLights[i]
-      uniformList.directionalLights.value[`directionalLights[${i}].direction`] = {
-        value: light.direction
-      }
-      uniformList.directionalLights.value[`directionalLights[${i}].color`] = {
-        value: light.color
+    if (this.background && !(mesh instanceof Background)) {
+      let gltexture
+      gltexture = this.background.material.albedoTexture.getGLTexture(gl)
+      uniformList.envMap.value = this.textureUnits
+      uniformList.envMap.gltexture = gltexture
+      this.textureUnits++
+    }
+    if (uniformList.directionalLights) {
+      for (let i = 0; i < this.directionalLights.length; i++) {
+        const light = this.directionalLights[i]
+        uniformList.directionalLights.value[`directionalLights[${i}].direction`] = {
+          value: light.direction
+        }
+        uniformList.directionalLights.value[`directionalLights[${i}].color`] = {
+          value: light.color
+        }
       }
     }
     for (let u of uniforms.array) {

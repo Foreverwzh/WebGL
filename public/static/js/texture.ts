@@ -67,16 +67,14 @@ export class Texture {
     const srcType = gl.UNSIGNED_BYTE
     const pixel = new Uint8Array([0, 0, 255, 255])
     texture.gltexture = gltexture
-    texture.width = width,
-    texture.height = height,
-    gl.bindTexture(gl.TEXTURE_2D, gltexture)
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                      width, height, border, srcFormat, srcType,
-                      pixel)
+    texture.width = width
+    texture.height = height
     if (texture.url === null) return
     if (Array.isArray(texture.url)) {
       if (texture.url.length === 6) {
         for (let i = 0; i < 6; i++) {
+          gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
+          // gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, null)
           const url = texture.url[i]
           const image = new Image()
           image.onload = () => {
@@ -90,13 +88,17 @@ export class Texture {
             if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
               isPowerOf2 = true
             }
-            this.setTextureParam(gl, gl.TEXTURE_2D, isPowerOf2)
             gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, image)
+            this.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, isPowerOf2)
           }
           image.src = url
         }
       }
     } else {
+      gl.bindTexture(gl.TEXTURE_2D, gltexture)
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                      width, height, border, srcFormat, srcType,
+                      pixel)
       const image = new Image()
       image.onload = () => {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
@@ -108,8 +110,8 @@ export class Texture {
         if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
           texture.isPowerOf2 = true
         }
-        this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
+        this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
       }
       image.src = texture.url
     }
@@ -118,7 +120,6 @@ export class Texture {
   setTextureParam (gl: WebGLRenderingContext, textureType: number, supportsMips: boolean) {
     const texture = this
     if (supportsMips) {
-
       gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, texture.sampler.wrapS)
       gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, texture.sampler.wrapT)
 

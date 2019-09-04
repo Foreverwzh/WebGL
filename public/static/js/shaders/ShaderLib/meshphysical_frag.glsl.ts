@@ -10,6 +10,7 @@ uniform vec3 diffuse;
 uniform float opacity;
 
 varying vec3 vViewPosition;
+varying vec3 vWorldPosition;
 varying vec3 vNormal;
 
 #include <common>
@@ -18,12 +19,13 @@ varying vec3 vNormal;
 #include <texture_pars_fragment>
 #include <normalmap_pars_fragment>
 #include <aomap_pars_fragment>
-#include <metalroughnessmap_pars_fragment>
 #include <emissivemap_pars_fragment>
 #include <bsdfs>
-#include <light_common>
+#include <envmap_pars_fragment>
+#include <envmap_physical_pars_fragment>
 #include <light_pars_begin>
 #include <light_physical_pars_fragment>
+#include <metalroughnessmap_pars_fragment>
 
 void main() {
 

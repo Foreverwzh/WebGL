@@ -33,6 +33,12 @@ IncidentLight directLight;
 
 		}
 
+  #endif
+
+  #if defined( USE_ENVMAP ) && defined( PHYSICAL ) && defined( ENVMAP_TYPE_CUBE_UV )
+
+		irradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, maxMipLevel );
+
 	#endif
 
 #endif
@@ -42,5 +48,13 @@ IncidentLight directLight;
 	vec3 radiance = vec3( 0.0 );
 	vec3 clearCoatRadiance = vec3( 0.0 );
 
+  #if defined( USE_ENVMAP )
+
+    radiance += getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry, Material_BlinnShininessExponent( material ), maxMipLevel );
+
+    clearCoatRadiance += getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry, Material_ClearCoat_BlinnShininessExponent( material ), maxMipLevel );
+
+  #endif
 #endif
+
 `

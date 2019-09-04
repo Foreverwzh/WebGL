@@ -2,6 +2,7 @@ export default /* glsl */`
 #define PHYSICAL
 
 varying vec3 vViewPosition;
+varying vec3 vWorldPosition;
 varying vec3 vNormal;
 
 #include <common>
@@ -14,6 +15,7 @@ void main() {
 	vNormal = normalize( transformedNormal );
 	vec4 mvPosition = viewMatrix * modelMatrix * vec4(position, 1.0);
 	vViewPosition = -mvPosition.xyz;
+	vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
 	gl_Position = projectMatrix * mvPosition;
 }
 `

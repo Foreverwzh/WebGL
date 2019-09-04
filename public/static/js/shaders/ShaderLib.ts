@@ -12,6 +12,7 @@ export default {
       UniformsLib.normalmap,
       UniformsLib.metalroughnessmap,
       UniformsLib.aomap,
+      UniformsLib.envmap,
       UniformsLib.lights,
       {
         emissive: { value: vec3.fromValues(1.0, 1.0, 1.0) },
@@ -26,7 +27,7 @@ export default {
     vertexShader: ShaderChunk.meshphysical_vert,
     fragmentShader: ShaderChunk.meshphysical_frag
 
-  }
+  },
 
   // matcap: {
 
@@ -116,17 +117,15 @@ export default {
 
   // },
 
-  // background: {
-
-  //   uniforms: {
-  //     uvTransform: { value: new Matrix3() },
-  //     t2D: { value: null }
-  //   },
-
-  //   vertexShader: ShaderChunk.background_vert,
-  //   fragmentShader: ShaderChunk.background_frag
-
-  // },
+  background: {
+    uniforms: mergeUniforms([
+      {
+        skybox: { value: null }
+      }
+    ]),
+    vertexShader: ShaderChunk.background_vert,
+    fragmentShader: ShaderChunk.background_frag
+  }
 
   // cube: {
 

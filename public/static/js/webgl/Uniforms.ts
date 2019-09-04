@@ -159,8 +159,13 @@ export class SingleUniform {
 
   }
 
-  setValueT6 () {
-
+  setValueT6 (gl: WebGLRenderingContext, unit: number, gltexture: WebGLTexture) {
+    if (this.cache !== unit) {
+      gl.uniform1i(this.addr, unit)
+      this.cache = unit
+    }
+    gl.activeTexture(gl.TEXTURE0 + unit)
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
   }
 
   setValueT2DArray1 () {

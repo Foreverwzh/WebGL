@@ -5,6 +5,7 @@ import { Material } from '../Material'
 import { ShaderChunk } from '../shaders/ShaderChunk'
 import { Uniforms } from './Uniforms'
 import { Attributes } from './Attributes'
+import { Background } from './Background'
 
 export class Program {
   public vertexShader: WebGLShader
@@ -16,7 +17,7 @@ export class Program {
   public cachedUniforms?: Uniforms
   public cachedAttributes?: Attributes
 
-  constructor (gl: WebGLRenderingContext, object: Mesh) {
+  constructor (gl: WebGLRenderingContext, object: Mesh, background: Background) {
     this.gl = gl
     object.program = this
     const material = object.material
@@ -44,6 +45,8 @@ export class Program {
       material.occlusionTexture ? '#define USE_AO' : '',
       material.physicallyCorrectLights ? '#define PHYSICALLY_CORRECT_LIGHTS' : '',
       geometry.tangent ? '#define USE_TANGENT' : '',
+      background ? '#define USE_ENVMAP' : '',
+      background ? '#define ENVMAP_TYPE_CUBE' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
 
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
@@ -82,6 +85,8 @@ export class Program {
       material.occlusionTexture ? '#define USE_AO' : '',
       material.physicallyCorrectLights ? '#define PHYSICALLY_CORRECT_LIGHTS' : '',
       geometry.tangent ? '#define USE_TANGENT' : '',
+      background ? '#define USE_ENVMAP' : '',
+      background ? '#define ENVMAP_TYPE_CUBE' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 

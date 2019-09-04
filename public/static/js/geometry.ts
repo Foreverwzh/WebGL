@@ -66,7 +66,7 @@ export class Geometry {
   }
 
   private _initVertexAttribute (obj: any, name?: string): VertexAttribute {
-    return {
+    const opt = {
       name: obj.name || '',
       data: obj.data || new ArrayBuffer(0),
       componentType: obj.componentType || 5126,
@@ -77,5 +77,7 @@ export class Geometry {
       target: obj.target || 34962,
       count: obj.count || null
     }
+    opt.count = obj.count || (opt.data.length / opt.size)
+    return opt
   }
 }

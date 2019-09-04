@@ -14,7 +14,6 @@ import emissivemap_pars_fragment from './ShaderChunk/emissivemap_pars_fragment.g
 import uv_pars_fragment from './ShaderChunk/uv_pars_fragment.glsl'
 import uv_pars_vertex from './ShaderChunk/uv_pars_vertex.glsl'
 import uv_vertex from './ShaderChunk/uv_vertex.glsl'
-import light_common from './ShaderChunk/light_common.glsl'
 import light_physical_fragment from './ShaderChunk/light_physical_fragment.glsl'
 import light_pars_begin from './ShaderChunk/light_pars_begin.glsl'
 import light_fragment_begin from './ShaderChunk/light_fragment_begin.glsl'
@@ -22,9 +21,16 @@ import light_fragment_end from './ShaderChunk/light_fragment_end.glsl'
 import light_physical_pars_fragment from './ShaderChunk/light_physical_pars_fragment.glsl'
 import bsdfs from './ShaderChunk/bsdfs.glsl'
 import encodings_pars_fragment from './ShaderChunk/encodings_pars_fragment.glsl'
+import envmap_fragment from './ShaderChunk/envmap_fragment.glsl'
+import envmap_vertex from './ShaderChunk/envmap_vertex.glsl'
+import envmap_pars_fragment from './ShaderChunk/envmap_pars_fragment.glsl'
+import envmap_pars_vertex from './ShaderChunk/envmap_pars_vertex.glsl'
+import envmap_physical_pars_fragment from './ShaderChunk/envmap_physical_pars_fragment.glsl'
 
 import meshphysical_frag from './ShaderLib/meshphysical_frag.glsl'
 import meshphysical_vert from './ShaderLib/meshphysical_vert.glsl'
+import background_frag from './ShaderLib/background_frag.glsl'
+import background_vert from './ShaderLib/background_vert.glsl'
 
 export const ShaderChunk = {
   common: common,
@@ -44,13 +50,19 @@ export const ShaderChunk = {
   uv_pars_fragment: uv_pars_fragment,
   uv_pars_vertex: uv_pars_vertex,
   uv_vertex: uv_vertex,
-  light_common: light_common,
   light_physical_fragment: light_physical_fragment,
   light_pars_begin: light_pars_begin,
   light_fragment_end: light_fragment_end,
   light_fragment_begin: light_fragment_begin,
   light_physical_pars_fragment: light_physical_pars_fragment,
+  envmap_fragment: envmap_fragment,
+  envmap_vertex: envmap_vertex,
+  envmap_pars_fragment: envmap_pars_fragment,
+  envmap_pars_vertex: envmap_pars_vertex,
+  envmap_physical_pars_fragment: envmap_physical_pars_fragment,
 
   meshphysical_frag: meshphysical_frag,
-  meshphysical_vert: meshphysical_vert
+  meshphysical_vert: meshphysical_vert,
+  background_frag: background_frag,
+  background_vert: background_vert
 }
