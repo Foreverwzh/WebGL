@@ -74,7 +74,7 @@ export class Texture {
       if (texture.url.length === 6) {
         for (let i = 0; i < 6; i++) {
           gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
-          // gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, null)
+          // gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, width, height, border, srcFormat, srcType, pixel)
           const url = texture.url[i]
           const image = new Image()
           image.onload = () => {
@@ -84,12 +84,12 @@ export class Texture {
             gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
             texture.width = image.width
             texture.height = image.height
-            let isPowerOf2 = false
+            texture.isPowerOf2 = false
             if (util.isPowerOf2(image.width) && util.isPowerOf2(image.height)) {
-              isPowerOf2 = true
+              texture.isPowerOf2 = true
             }
             gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, image)
-            this.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, isPowerOf2)
+            this.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, texture.isPowerOf2)
           }
           image.src = url
         }

@@ -87,6 +87,8 @@ export class Program {
       geometry.tangent ? '#define USE_TANGENT' : '',
       background ? '#define USE_ENVMAP' : '',
       background ? '#define ENVMAP_TYPE_CUBE' : '',
+      background ? '#define ENVMAP_MODE_REFLECTION' : '',
+      background ? '#define ENVMAP_BLENDING_MULTIPLY' : '',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 
@@ -111,7 +113,7 @@ export class Program {
     fs_code = this.unrollLoops(fs_code)
     fs_code = prefixFragment + fs_code
     // console.log(vs_code)
-    console.log(fs_code)
+    // console.log(fs_code)
     this.vertexShader = this.WebGLShader(gl, gl.VERTEX_SHADER, vs_code)
     this.fragmentShader = this.WebGLShader(gl, gl.FRAGMENT_SHADER, fs_code)
     gl.attachShader(this.program, this.vertexShader)

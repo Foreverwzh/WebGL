@@ -146,26 +146,30 @@ export class SingleUniform {
     this.cache = mat4.copy(mat4.create(), v)
   }
 
-  setValueT1 (gl: WebGLRenderingContext, unit: number, gltexture: WebGLTexture) {
+  setValueT1 (gl: WebGLRenderingContext, unit: number, texture: Texture) {
     if (this.cache !== unit) {
       gl.uniform1i(this.addr, unit)
       this.cache = unit
     }
+    const gltexture = texture.getGLTexture(gl)
     gl.activeTexture(gl.TEXTURE0 + unit)
     gl.bindTexture(gl.TEXTURE_2D, gltexture)
+    texture.setTextureParam(gl, gl.TEXTURE_2D, texture.isPowerOf2)
   }
 
   setValueT3D1 () {
 
   }
 
-  setValueT6 (gl: WebGLRenderingContext, unit: number, gltexture: WebGLTexture) {
+  setValueT6 (gl: WebGLRenderingContext, unit: number, texture: Texture) {
     if (this.cache !== unit) {
       gl.uniform1i(this.addr, unit)
       this.cache = unit
     }
+    const gltexture = texture.getGLTexture(gl)
     gl.activeTexture(gl.TEXTURE0 + unit)
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, gltexture)
+    texture.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, texture.isPowerOf2)
   }
 
   setValueT2DArray1 () {

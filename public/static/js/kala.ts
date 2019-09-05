@@ -67,7 +67,7 @@ export class Kala {
     const fovy = 45 * Math.PI / 180
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
     const zNear = 0.1
-    const zFar = 100.0
+    const zFar = 1000.0
     const projectMatrix = mat4.create()
     mat4.perspective(projectMatrix,
             fovy,
@@ -232,57 +232,57 @@ export class Kala {
 
     const normalTexture = mesh.material.normalTexture
     if (normalTexture) {
-      let gltexture
-      gltexture = normalTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = normalTexture.getGLTexture(gl)
       uniformList.normalMap.value = this.textureUnits
-      uniformList.normalMap.gltexture = gltexture
+      uniformList.normalMap.texture = normalTexture
       this.textureUnits++
     }
     const albedoTexture = mesh.material.albedoTexture
     if (albedoTexture) {
-      let gltexture
-      gltexture = albedoTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = albedoTexture.getGLTexture(gl)
       if (mesh instanceof Background) {
         uniformList.skybox.value = this.textureUnits
-        uniformList.skybox.gltexture = gltexture
+        uniformList.skybox.texture = albedoTexture
       } else {
         uniformList.texture.value = this.textureUnits
-        uniformList.texture.gltexture = gltexture
+        uniformList.texture.texture = albedoTexture
       }
       this.textureUnits++
     }
     const occlusionTexture = mesh.material.occlusionTexture
     if (occlusionTexture) {
-      let gltexture
-      gltexture = occlusionTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = occlusionTexture.getGLTexture(gl)
       uniformList.aoMap.value = this.textureUnits
-      uniformList.aoMap.gltexture = gltexture
+      uniformList.aoMap.texture = occlusionTexture
       this.textureUnits++
     }
     const metalRoughnessTexture = mesh.material.metalRoughnessTexture
     if (metalRoughnessTexture) {
-      let gltexture
-      gltexture = metalRoughnessTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = metalRoughnessTexture.getGLTexture(gl)
       uniformList.metalroughnessMap.value = this.textureUnits
-      uniformList.metalroughnessMap.gltexture = gltexture
+      uniformList.metalroughnessMap.texture = metalRoughnessTexture
       uniformList.roughness.value = metalRoughnessTexture.roughness
       uniformList.metalness.value = metalRoughnessTexture.metalness
       this.textureUnits++
     }
     const emissiveTexture = mesh.material.emissiveTexture
     if (emissiveTexture) {
-      let gltexture
-      gltexture = emissiveTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = emissiveTexture.getGLTexture(gl)
       uniformList.emissiveMap.value = this.textureUnits
-      uniformList.emissiveMap.gltexture = gltexture
+      uniformList.emissiveMap.texture = emissiveTexture
       uniformList.emissive.value = emissiveTexture.factor
       this.textureUnits++
     }
     if (this.background && !(mesh instanceof Background)) {
-      let gltexture
-      gltexture = this.background.material.albedoTexture.getGLTexture(gl)
+      // let gltexture
+      // gltexture = this.background.material.albedoTexture.getGLTexture(gl)
       uniformList.envMap.value = this.textureUnits
-      uniformList.envMap.gltexture = gltexture
+      uniformList.envMap.texture = this.background.material.albedoTexture
       this.textureUnits++
     }
     if (uniformList.directionalLights) {
@@ -300,8 +300,8 @@ export class Kala {
       const v = uniformList[u.id]
       if (uniformList[u.id]) {
         if (u instanceof SingleUniform || u instanceof PureArrayUniform) {
-          if (v.gltexture) {
-            u.setValue(gl, v.value, v.gltexture)
+          if (v.texture) {
+            u.setValue(gl, v.value, v.texture)
           } else {
             u.setValue(gl, v.value)
           }
