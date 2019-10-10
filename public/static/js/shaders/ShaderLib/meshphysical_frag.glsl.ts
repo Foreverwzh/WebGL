@@ -16,6 +16,7 @@ varying vec3 vNormal;
 #include <common>
 #include <encodings_pars_fragment>
 #include <uv_pars_fragment>
+#include <packing>
 #include <texture_pars_fragment>
 #include <normalmap_pars_fragment>
 #include <aomap_pars_fragment>
@@ -25,6 +26,7 @@ varying vec3 vNormal;
 #include <envmap_physical_pars_fragment>
 #include <light_pars_begin>
 #include <light_physical_pars_fragment>
+#include <shadowmap_pars_fragment>
 #include <metalroughnessmap_pars_fragment>
 
 void main() {
@@ -48,5 +50,6 @@ void main() {
 	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
 	gl_FragColor = vec4(outgoingLight, diffuseColor.a);
 	gl_FragColor = LinearTosRGB( gl_FragColor );
+	// gl_FragColor = texture2D(directionalShadowMap[0], vUv);
 }
 `

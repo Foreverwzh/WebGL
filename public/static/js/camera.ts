@@ -37,8 +37,8 @@ export class Camera {
     this.gl = kala.gl
     vec3.set(this.WorldUp, 0.0, 1.0, 0.0)
     this.updateCameraVectors()
-    this.addMouseEvent()
-    this.addKeyEvent()
+    // this.addMouseEvent()
+    // this.addKeyEvent()
   }
 
   setPosition (pos: [number, number, number]) {
@@ -138,8 +138,9 @@ export class Camera {
   }
 
   addKeyEvent () {
-    this.gl.canvas.setAttribute('tabindex', '1')
-    this.gl.canvas.addEventListener('keydown', (e: KeyboardEvent) => {
+    const canvas = this.gl.canvas
+    canvas.setAttribute('tabindex', '1')
+    canvas.addEventListener('keydown', (e: KeyboardEvent) => {
       e.preventDefault()
       if (!this.kala.pointerLock) return false
       const k = e.key
@@ -147,7 +148,7 @@ export class Camera {
       return false
     })
 
-    this.gl.canvas.addEventListener('keyup', (e: KeyboardEvent) => {
+    canvas.addEventListener('keyup', (e: KeyboardEvent) => {
       e.preventDefault()
       if (!this.kala.pointerLock) return false
       const k = e.key

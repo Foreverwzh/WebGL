@@ -266,12 +266,15 @@ export class PureArrayUniform {
   }
 
   setValueM4Array (gl: WebGLRenderingContext, v: number[][]) {
-    const data = this.flatten(v, this.info.size, 16)
-    gl.uniformMatrix4fv(this.addr, false, data)
+    // const data = this.flatten(v, this.info.size, 16)
+    // gl.uniformMatrix4fv(this.addr, false, data)
   }
 
-  setValueT1Array (gl: WebGLRenderingContext, v: number[][]) {
-
+  setValueT1Array (gl: WebGLRenderingContext, v: any, textures: any[]) {
+    // gl.activeTexture(gl.TEXTURE0)
+    // gl.uniform1iv(this.addr, units)
+    // gl.bindTexture(gl.TEXTURE_2D, v.texture)
+    // texture.setTextureParam(gl, gl.TEXTURE_2D, texture.isPowerOf2)
   }
 
   setValueT6Array (gl: WebGLRenderingContext, v: number[][]) {

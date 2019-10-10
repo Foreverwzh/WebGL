@@ -26,11 +26,17 @@ import envmap_vertex from './ShaderChunk/envmap_vertex.glsl'
 import envmap_pars_fragment from './ShaderChunk/envmap_pars_fragment.glsl'
 import envmap_pars_vertex from './ShaderChunk/envmap_pars_vertex.glsl'
 import envmap_physical_pars_fragment from './ShaderChunk/envmap_physical_pars_fragment.glsl'
+import shadowmap_pars_fragment from './ShaderChunk/shadowmap_pars_fragment.glsl'
+import shadowmap_pars_vertex from './ShaderChunk/shadowmap_pars_vertex.glsl'
+import shadowmap_vertex from './ShaderChunk/shadowmap_vertex.glsl'
+import packing from './ShaderChunk/packing.glsl'
 
 import meshphysical_frag from './ShaderLib/meshphysical_frag.glsl'
 import meshphysical_vert from './ShaderLib/meshphysical_vert.glsl'
 import background_frag from './ShaderLib/background_frag.glsl'
 import background_vert from './ShaderLib/background_vert.glsl'
+import depth_frag from './ShaderLib/depth_frag.glsl'
+import depth_vert from './ShaderLib/depth_vert.glsl'
 
 export const ShaderChunk = {
   common: common,
@@ -60,9 +66,15 @@ export const ShaderChunk = {
   envmap_pars_fragment: envmap_pars_fragment,
   envmap_pars_vertex: envmap_pars_vertex,
   envmap_physical_pars_fragment: envmap_physical_pars_fragment,
+  shadowmap_pars_fragment: shadowmap_pars_fragment,
+  shadowmap_pars_vertex: shadowmap_pars_vertex,
+  shadowmap_vertex: shadowmap_vertex,
+  packing: packing,
 
   meshphysical_frag: meshphysical_frag,
   meshphysical_vert: meshphysical_vert,
   background_frag: background_frag,
-  background_vert: background_vert
+  background_vert: background_vert,
+  depth_frag: depth_frag,
+  depth_vert: depth_vert
 }

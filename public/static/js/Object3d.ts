@@ -12,6 +12,7 @@ export class Object3D {
   public matrixWorld: mat4
   public matrixWorldNeedsUpdate: boolean
   public program: Program
+  public shadowProgram: Program
   constructor (name?: string) {
     this.name = name || ''
     this.children = []

@@ -49,9 +49,11 @@ export class Kala {
   public directionalLights: (DirectionalLight)[] = []
   public scene: Scene
   public background: Background = null
+  public framebuffer: WebGLFramebuffer
 
   public constructor (canvas: HTMLCanvasElement) {
     this.gl = canvas.getContext('webgl')
+    this.framebuffer = this.initFramebufferObject(this.gl)
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
     this.scene = new Scene()
@@ -59,7 +61,7 @@ export class Kala {
     this.camera = new Camera(this)
     this.view = this.camera.getViewMatrix()
     this.directionalLights.push(new DirectionalLight(vec3.fromValues(1, 1, 1), vec3.fromValues(1.0, 1.0, 1.0)))
-    this.fullScreen()
+    // this.fullScreen()
   }
 
   public initProjectMatrix (): mat4 {
@@ -111,7 +113,7 @@ export class Kala {
     return dataBuffer
   }
 
-  renderObject (obj: Object3D | Scene | Mesh, matrix: mat4) {
+  renderObject (obj: Object3D | Scene | Mesh, matrix: mat4, type?: string) {
     const needsUpdate = obj.matrixWorldNeedsUpdate
     if (needsUpdate) {
       obj.updateMatrix()
@@ -124,10 +126,14 @@ export class Kala {
         if (needsUpdate) {
           c.matrixWorldNeedsUpdate = true
         }
-        this.renderObject(c, matrix)
+        this.renderObject(c, matrix, type)
       }
       if (obj instanceof Mesh) {
-        this.renderMesh(obj)
+        if (type === 'depth') {
+          this.renderDepth(obj)
+        } else {
+          this.renderMesh(obj)
+        }
       }
       return
     }
@@ -135,7 +141,6 @@ export class Kala {
 
   renderMesh (mesh: Mesh) {
     this.textureUnits = 0
-
     const gl = this.gl
     if (!mesh.program) {
       const cache_p = hasCached(mesh.material, this.programs)
@@ -294,6 +299,26 @@ export class Kala {
         uniformList.directionalLights.value[`directionalLights[${i}].color`] = {
           value: light.color
         }
+        // uniformList.directionalShadowMap.value[`directionalShadowMap[${i}]`] = {
+        //   value: 0,
+        //   texture: this.framebuffer.texture
+        // }
+        if (!light.directionalShadowMatrix) {
+          const depthProjectionMatrix = mat4.create()
+          mat4.ortho(depthProjectionMatrix, -10, 10, -10, 10, -10, 101)
+          const depthViewMatrix = mat4.create()
+          mat4.lookAt(depthViewMatrix, this.directionalLights[0].direction, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0))
+          const directionalShadowMatrix = mat4.create()
+          mat4.multiply(directionalShadowMatrix, depthProjectionMatrix, depthViewMatrix)
+          light.directionalShadowMatrix = directionalShadowMatrix
+        }
+        if (uniforms.map.directionalShadowMap) {
+          gl.uniform1i(uniforms.map.directionalShadowMap.addr, this.textureUnits)
+          gl.activeTexture(gl.TEXTURE0 + this.textureUnits)
+          gl.bindTexture(gl.TEXTURE_2D, this.framebuffer.texture)
+          this.textureUnits++
+          gl.uniformMatrix4fv(uniforms.map.directionalShadowMatrix.addr, false, light.directionalShadowMatrix)
+        }
       }
     }
     for (let u of uniforms.array) {
@@ -322,31 +347,162 @@ export class Kala {
     }
   }
 
-  fullScreen () {
-    const elem = this.gl.canvas
-    const _this = this
-    document.addEventListener('fullscreenchange', fullscreenChange, false)
-    document.addEventListener('pointerlockchange', pointerLockChange, false)
-    document.addEventListener('pointerlockerror', pointerLockError, false)
-    function fullscreenChange () {
-      if (document.fullscreenElement === elem) {
-        elem.requestPointerLock()
-      }
-    }
-    function pointerLockChange () {
-      if (document.pointerLockElement === elem) {
-        _this.pointerLock = true
-      } else {
-        _this.pointerLock = false
-      }
-    }
-    function pointerLockError () {
-      _this.pointerLock = false
-    }
-    elem.addEventListener('click', () => {
-      elem.requestFullscreen().then().catch(e => console.log(e))
-    }, false)
+  renderDepth (mesh: Mesh) {
 
+    const gl = this.gl
+    if (!mesh.shadowProgram) {
+      mesh.shadowProgram = new Program(gl, mesh, this.background, 'depth')
+    }
+    const program = mesh.shadowProgram.program
+    if (this.activedProgram !== mesh.shadowProgram) {
+      gl.useProgram(program)
+      this.activedProgram = mesh.shadowProgram
+    }
+    const uniforms = mesh.shadowProgram.getUniforms()
+    const attrs = mesh.shadowProgram.getAttributes()
+    // return
+    const vertexBuffer = this.initBufferData(mesh.geometry.vertices)
+    if (vertexBuffer) {
+      gl.bindBuffer(mesh.geometry.vertices.target, vertexBuffer)
+      gl.vertexAttribPointer(
+                attrs.map.position.addr,
+                mesh.geometry.vertices.size,
+                mesh.geometry.vertices.componentType,
+                mesh.geometry.vertices.normalized,
+                mesh.geometry.vertices.stride,
+                mesh.geometry.vertices.offset)
+      gl.enableVertexAttribArray(attrs.map.position.addr)
+    }
+    const uniformList = mesh.material.shader.uniforms
+    const depthProjectionMatrix = mat4.create()
+    mat4.ortho(depthProjectionMatrix, -10, 10, -10, 10, -10, 101)
+    const depthViewMatrix = mat4.create()
+    mat4.lookAt(depthViewMatrix, this.directionalLights[0].direction, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0))
+    gl.uniformMatrix4fv(uniforms.map.projectMatrix.addr, false, depthProjectionMatrix)
+    gl.uniformMatrix4fv(uniforms.map.lightViewMatrix.addr, false, depthViewMatrix)
+    gl.uniformMatrix4fv(uniforms.map.modelMatrix.addr, false, mesh.modelMatrix)
+
+    // for (let i = 0; i < this.directionalLights.length; i++) {
+    //   const light = this.directionalLights[i]
+      // const viewProjectMatrixFromLight = mat4.create()
+      // const light_pos = vec3.fromValues(-light.direction[0] * 1000, -light.direction[1] * 1000, -light.direction[2] * 1000)
+      // mat4.lookAt(viewProjectMatrixFromLight, light_pos, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0))
+    //   const viewProjectMatrixFromLight = this.view
+    //   mat4.multiply(viewProjectMatrixFromLight, this.projectMatrix, viewProjectMatrixFromLight)
+    //   gl.uniformMatrix4fv(uniforms.map.lightSpaceMatrix.addr, false, viewProjectMatrixFromLight)
+    // }
+    for (let u of uniforms.array) {
+      const v = uniformList[u.id]
+      if (uniformList[u.id]) {
+        if (u instanceof SingleUniform || u instanceof PureArrayUniform) {
+          if (v.texture) {
+            u.setValue(gl, v.value, v.texture)
+          } else {
+            u.setValue(gl, v.value)
+          }
+        } else if (u instanceof StructuredUniform) {
+          u.setValue(gl, v.value)
+        }
+      }
+    }
+
+    const offset = 0
+    const vertexCount = mesh.geometry.count
+    if (mesh.geometry.indices) {
+      const indexBuffer = this.initBufferData(mesh.geometry.indices)
+      gl.bindBuffer(mesh.geometry.indices.target, indexBuffer)
+      gl.drawElements(mesh.geometry.mode, vertexCount, mesh.geometry.indices.componentType, mesh.geometry.indices.offset)
+    } else {
+      gl.drawArrays(mesh.geometry.mode, offset, vertexCount)
+    }
+  }
+
+  // fullScreen () {
+  //   const elem = this.gl.canvas
+  //   const _this = this
+  //   document.addEventListener('fullscreenchange', fullscreenChange, false)
+  //   document.addEventListener('pointerlockchange', pointerLockChange, false)
+  //   document.addEventListener('pointerlockerror', pointerLockError, false)
+  //   function fullscreenChange () {
+  //     if (document.fullscreenElement === elem) {
+  //       elem.requestPointerLock()
+  //     }
+  //   }
+  //   function pointerLockChange () {
+  //     if (document.pointerLockElement === elem) {
+  //       _this.pointerLock = true
+  //     } else {
+  //       _this.pointerLock = false
+  //     }
+  //   }
+  //   function pointerLockError () {
+  //     _this.pointerLock = false
+  //   }
+  //   elem.addEventListener('click', () => {
+  //     elem.requestFullscreen().then().catch(e => console.log(e))
+  //   }, false)
+
+  // }
+
+  initFramebufferObject (gl) {
+    let framebuffer, texture, depthBuffer
+    const offset_width = 1024
+    const offset_height = 1024
+    // 定义错误函数
+    function error () {
+      if (framebuffer) gl.deleteFramebuffer(framebuffer)
+      if (texture) gl.deleteFramebuffer(texture)
+      if (depthBuffer) gl.deleteFramebuffer(depthBuffer)
+      return null
+    }
+
+    // 创建帧缓冲区对象
+    framebuffer = gl.createFramebuffer()
+    if (!framebuffer) {
+      console.log('无法创建帧缓冲区对象')
+      return error()
+    }
+
+    // 创建纹理对象并设置其尺寸和参数
+    texture = gl.createTexture()
+    if (!texture) {
+      console.log('无法创建纹理对象')
+      return error()
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, offset_width, offset_height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    framebuffer.texture = texture// 将纹理对象存入framebuffer
+
+    // 创建渲染缓冲区对象并设置其尺寸和参数
+    depthBuffer = gl.createRenderbuffer()
+    if (!depthBuffer) {
+      console.log('无法创建渲染缓冲区对象')
+      return error()
+    }
+
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer)
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, offset_width, offset_height)
+
+    // 将纹理和渲染缓冲区对象关联到帧缓冲区对象上
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer)
+
+    // 检查帧缓冲区对象是否被正确设置
+    let e = gl.checkFramebufferStatus(gl.FRAMEBUFFER)
+    if (gl.FRAMEBUFFER_COMPLETE !== e) {
+      console.log('渲染缓冲区设置错误' + e.toString())
+      return error()
+    }
+
+    // 取消当前的focus对象
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null)
+
+    return framebuffer
   }
 
   render () {
@@ -366,6 +522,21 @@ export class Kala {
       this.camera.ProcessKeyAction(k)
     }
     const gl = this.gl
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer)
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+    gl.clearColor(0, 0, 0, 1.0)
+    gl.clearDepth(1.0)
+    gl.enable(gl.DEPTH_TEST)
+    gl.depthFunc(gl.LEQUAL)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    this.projectMatrix = this.initProjectMatrix()
+    this.view = this.camera.getViewMatrix()
+    for (let obj of this.objects) {
+      const matrix = mat4.create()
+      mat4.identity(matrix)
+      this.renderObject(obj, matrix, 'depth')
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     gl.clearColor(0, 0, 0, 1.0)
     gl.clearDepth(1.0)

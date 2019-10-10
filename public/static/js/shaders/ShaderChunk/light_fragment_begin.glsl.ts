@@ -14,6 +14,11 @@ IncidentLight directLight;
   for(int i = 0; i < NUM_DIR_LIGHTS; i++){
     directionalLight = directionalLights[i];
     getDirectionalDirectLightIrradiance(directionalLight, directLight);
+
+    #ifdef USE_SHADOWMAP
+		directLight.color *= all( bvec2( directionalLight.shadow, directLight.visible ) ) ? getShadow( directionalShadowMap[ i ], directionalLight.shadowMapSize, directionalLight.shadowBias, directionalLight.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+		#endif
+
     RE_Direct(directLight, geometry, material, reflectedLight);
   }
 

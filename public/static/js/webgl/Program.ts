@@ -17,12 +17,17 @@ export class Program {
   public cachedUniforms?: Uniforms
   public cachedAttributes?: Attributes
 
-  constructor (gl: WebGLRenderingContext, object: Mesh, background: Background) {
+  constructor (gl: WebGLRenderingContext, object: Mesh, background: Background, type?: string) {
     this.gl = gl
-    object.program = this
     const material = object.material
     const geometry = object.geometry
-    const shader = material.shader
+    let shader = material.shader
+    if (type === 'depth') {
+      shader = ShaderLib['depth']
+      object.shadowProgram = this
+    } else {
+      object.program = this
+    }
     if (!shader) {
       throw new Error('unknown material type')
     }
@@ -47,6 +52,7 @@ export class Program {
       geometry.tangent ? '#define USE_TANGENT' : '',
       background ? '#define USE_ENVMAP' : '',
       background ? '#define ENVMAP_TYPE_CUBE' : '',
+      '#define USE_SHADOWMAP',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
 
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
@@ -89,6 +95,7 @@ export class Program {
       background ? '#define ENVMAP_TYPE_CUBE' : '',
       background ? '#define ENVMAP_MODE_REFLECTION' : '',
       background ? '#define ENVMAP_BLENDING_MULTIPLY' : '',
+      '#define USE_SHADOWMAP',
       // parameters.vertexColors ? '#define USE_COLOR' : '',
       // parameters.flatShading ? '#define FLAT_SHADED' : '',
 

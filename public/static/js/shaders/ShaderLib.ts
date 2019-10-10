@@ -76,17 +76,17 @@ export default {
 
   // },
 
-  // depth: {
+  depth: {
 
-  //   uniforms: mergeUniforms([
-  //     UniformsLib.common,
-  //     UniformsLib.displacementmap
-  //   ]),
+    uniforms: mergeUniforms([
+      // UniformsLib.common,
+      // UniformsLib.displacementmap
+    ]),
 
-  //   vertexShader: ShaderChunk.depth_vert,
-  //   fragmentShader: ShaderChunk.depth_frag
+    vertexShader: ShaderChunk.depth_vert,
+    fragmentShader: ShaderChunk.depth_frag
 
-  // },
+  },
 
   // normal: {
 

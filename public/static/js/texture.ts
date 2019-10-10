@@ -59,17 +59,22 @@ export class Texture {
     const texture = this
     const gltexture = gl.createTexture()
     const level = 0
-    const internalFormat = texture instanceof AlbedoTexture ? gl.RGBA : gl.RGB
+    let internalFormat = texture instanceof AlbedoTexture ? gl.RGBA : gl.RGB
     const width = 1
     const height = 1
     const border = 0
-    const srcFormat = internalFormat
-    const srcType = gl.UNSIGNED_BYTE
+    let srcFormat = internalFormat
+    let srcType = gl.UNSIGNED_BYTE
     const pixel = new Uint8Array([0, 0, 255, 255])
     texture.gltexture = gltexture
     texture.width = width
     texture.height = height
-    if (texture.url === null) return
+    if (texture instanceof ShadowTexture) {
+      internalFormat = gl.DEPTH_COMPONENT
+      srcFormat = gl.DEPTH_COMPONENT
+      srcType = gl.UNSIGNED_SHORT
+    }
+    if (texture.url === null && !(texture instanceof ShadowTexture)) return
     if (Array.isArray(texture.url)) {
       if (texture.url.length === 6) {
         for (let i = 0; i < 6; i++) {
@@ -89,7 +94,8 @@ export class Texture {
               texture.isPowerOf2 = true
             }
             gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, level, internalFormat, srcFormat, srcType, image)
-            this.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, texture.isPowerOf2)
+            texture.setTextureParam(gl, gl.TEXTURE_CUBE_MAP, texture.isPowerOf2)
+            gl.bindTexture(gl.TEXTURE_2D, null)
           }
           image.src = url
         }
@@ -98,7 +104,7 @@ export class Texture {
       gl.bindTexture(gl.TEXTURE_2D, gltexture)
       gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
                       width, height, border, srcFormat, srcType,
-                      pixel)
+                      null)
       const image = new Image()
       image.onload = () => {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, texture.flipY)
@@ -111,7 +117,8 @@ export class Texture {
           texture.isPowerOf2 = true
         }
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image)
-        this.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
+        texture.setTextureParam(gl, gl.TEXTURE_2D, this.isPowerOf2)
+        gl.bindTexture(gl.TEXTURE_2D, null)
       }
       image.src = texture.url
     }
@@ -138,7 +145,11 @@ export class Texture {
   }
 
   getGLTexture (gl: WebGLRenderingContext) {
-    if (this.gltexture) return this.gltexture
+    if (this instanceof ShadowTexture) {
+      if (this.depthbuffer) return this.depthbuffer
+    } else {
+      if (this.gltexture) return this.gltexture
+    }
     this.loadTextureURL(gl)
     return this.gltexture
   }
@@ -177,5 +188,12 @@ export class AlbedoTexture extends Texture {
   constructor (opt: TextureOption) {
     super(opt)
     this.baseColorFactor = [1, 1, 1, 1]
+  }
+}
+
+export class ShadowTexture extends Texture {
+  public depthbuffer: WebGLRenderbuffer
+  constructor (opt: TextureOption) {
+    super(opt)
   }
 }

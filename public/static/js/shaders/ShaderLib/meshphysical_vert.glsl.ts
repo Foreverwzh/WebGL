@@ -7,6 +7,7 @@ varying vec3 vNormal;
 
 #include <common>
 #include <uv_pars_vertex>
+#include <shadowmap_pars_vertex>
 
 void main() {
 
@@ -15,7 +16,9 @@ void main() {
 	vNormal = normalize( transformedNormal );
 	vec4 mvPosition = viewMatrix * modelMatrix * vec4(position, 1.0);
 	vViewPosition = -mvPosition.xyz;
-	vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+	vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+	vWorldPosition = worldPosition.xyz;
 	gl_Position = projectMatrix * mvPosition;
+	#include <shadowmap_vertex>
 }
 `

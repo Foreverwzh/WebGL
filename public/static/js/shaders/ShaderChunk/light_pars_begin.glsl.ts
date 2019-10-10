@@ -56,7 +56,12 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
   struct DirectionalLight
   {
     vec3 direction;
-    vec3 color;
+		vec3 color;
+
+		int shadow;
+		float shadowBias;
+		float shadowRadius;
+		vec2 shadowMapSize;
   };
 
   void getDirectionalDirectLightIrradiance( const in DirectionalLight directionalLight, out IncidentLight directLight ) {
